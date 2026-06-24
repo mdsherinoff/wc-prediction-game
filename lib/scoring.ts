@@ -3,12 +3,28 @@ import { Match, MatchStatus, Stage } from "@prisma/client";
 /** A prediction locks 1 hour before kickoff. */
 export const LOCK_WINDOW_MS = 60 * 60 * 1000;
 
+/** Predictions only open 16 hours before kickoff, not before. */
+export const OPEN_WINDOW_MS = 16 * 60 * 60 * 1000;
+
 export function lockTime(kickoff: Date): Date {
   return new Date(kickoff.getTime() - LOCK_WINDOW_MS);
 }
 
+export function openTime(kickoff: Date): Date {
+  return new Date(kickoff.getTime() - OPEN_WINDOW_MS);
+}
+
 export function isLocked(kickoff: Date, now: Date = new Date()): boolean {
   return now.getTime() >= lockTime(kickoff).getTime();
+}
+
+export function isNotYetOpen(kickoff: Date, now: Date = new Date()): boolean {
+  return now.getTime() < openTime(kickoff).getTime();
+}
+
+/** True only during the predictable window: open 16h before kickoff, closes 1h before kickoff. */
+export function isPredictable(kickoff: Date, now: Date = new Date()): boolean {
+  return !isNotYetOpen(kickoff, now) && !isLocked(kickoff, now);
 }
 
 /**

@@ -40,9 +40,15 @@ export default function GroupMatchCard({
   const kickoffDate = new Date(match.kickoff);
   const lockTime = useMemo(
     () => new Date(kickoffDate.getTime() - 60 * 60 * 1000),
-    [match.kickoff]
+    [match.kickoff],
   );
-  const locked = new Date() >= lockTime || match.status !== "SCHEDULED";
+  const openTime = useMemo(
+    () => new Date(kickoffDate.getTime() - 16 * 60 * 60 * 1000),
+    [match.kickoff],
+  );
+  const now = new Date();
+  const notYetOpen = now < openTime && match.status === "SCHEDULED";
+  const locked = now >= lockTime || match.status !== "SCHEDULED";
 
   async function save() {
     setError(null);
@@ -92,10 +98,22 @@ export default function GroupMatchCard({
             {locked && match.status === "SCHEDULED" && (
               <span className="text-ink/40">🔒 Locked</span>
             )}
+            {notYetOpen && (
+              <span className="text-ink/40">
+                Opens{" "}
+                {openTime.toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
           </div>
           <div className="font-medium text-ink">
             {match.homeTeam?.name ?? "TBD"}{" "}
-            <span className="text-ink/40">vs</span> {match.awayTeam?.name ?? "TBD"}
+            <span className="text-ink/40">vs</span>{" "}
+            {match.awayTeam?.name ?? "TBD"}
           </div>
           {match.status === "FINISHED" && (
             <div className="text-xs text-turf mt-1 font-semibold">
@@ -116,8 +134,7 @@ export default function GroupMatchCard({
               min={0}
               max={20}
               inputMode="numeric"
-              disabled={locked}
-              value={home}
+              disabled={locked || notYetOpen}
               onChange={(e) => setHome(e.target.value)}
               aria-label={`${match.homeTeam?.name ?? "Home"} score prediction`}
             />
@@ -129,14 +146,13 @@ export default function GroupMatchCard({
               min={0}
               max={20}
               inputMode="numeric"
-              disabled={locked}
-              value={away}
+              disabled={locked || notYetOpen}
               onChange={(e) => setAway(e.target.value)}
               aria-label={`${match.awayTeam?.name ?? "Away"} score prediction`}
             />
           </div>
 
-          {!locked && (
+          {!locked && !notYetOpen && (
             <button
               onClick={save}
               disabled={saving}
@@ -148,9 +164,7 @@ export default function GroupMatchCard({
         </div>
       </div>
 
-      {error && (
-        <p className="text-red text-xs mt-2">{error}</p>
-      )}
+      {error && <p className="text-red text-xs mt-2">{error}</p>}
     </div>
   );
 }

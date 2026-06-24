@@ -45,9 +45,15 @@ export default function KnockoutMatchCard({
   const kickoffDate = new Date(match.kickoff);
   const lockTime = useMemo(
     () => new Date(kickoffDate.getTime() - 60 * 60 * 1000),
-    [match.kickoff]
+    [match.kickoff],
   );
-  const locked = new Date() >= lockTime || match.status !== "SCHEDULED";
+  const openTime = useMemo(
+    () => new Date(kickoffDate.getTime() - 16 * 60 * 60 * 1000),
+    [match.kickoff],
+  );
+  const now = new Date();
+  const notYetOpen = now < openTime && match.status === "SCHEDULED";
+  const locked = now >= lockTime || match.status !== "SCHEDULED";
   const teamsKnown = !!match.homeTeam && !!match.awayTeam;
 
   async function save() {
@@ -109,13 +115,24 @@ export default function KnockoutMatchCard({
         {locked && match.status === "SCHEDULED" && (
           <span className="text-ink/40">Locked</span>
         )}
+        {notYetOpen && (
+          <span className="text-ink/40">
+            Opens{" "}
+            {openTime.toLocaleString(undefined, {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
         {[match.homeTeam, match.awayTeam].map((team) => (
           <button
             key={team!.id}
-            disabled={locked}
+            disabled={locked || notYetOpen}
             onClick={() => setWinner(team!.id)}
             className={`flex-1 min-w-[120px] text-sm font-medium px-3 py-2 rounded border transition ${
               winner === team!.id
@@ -128,10 +145,11 @@ export default function KnockoutMatchCard({
         ))}
       </div>
 
-      {!locked && (
+      {!locked && !notYetOpen && (
         <div className="mt-3">
           <div className="text-xs text-ink/50 mb-1.5">
-            Optional score guess <span className="text-ink/40">(+2 pts if exact)</span>
+            Optional score guess{" "}
+            <span className="text-ink/40">(+2 pts if exact)</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="score-box w-9 h-9 text-base flex items-center justify-center shrink-0">

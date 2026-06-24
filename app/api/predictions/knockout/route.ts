@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { isLocked } from "@/lib/scoring";
+import { isLocked, isNotYetOpen } from "@/lib/scoring";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -33,10 +33,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (isNotYetOpen(match.kickoff)) {
+    return NextResponse.json(
+      { error: "Predictions for this match open 16 hours before kickoff" },
+      { status: 403 },
+    );
+  }
+
   if (isLocked(match.kickoff)) {
     return NextResponse.json(
       { error: "Predictions for this match are locked" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
