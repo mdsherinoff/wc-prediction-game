@@ -1,7 +1,6 @@
 # World Cup 2026 Prediction Pool
 
-A simple prediction game for a friend group, built for the 2026 FIFA World Cup
-(48 teams, 12 groups, Round of 32 to Final).
+A simple prediction game for a friend group, built for the 2026 FIFA World Cup.
 
 - Google sign-in (only invited friends can play)
 - Group stage: predict the exact scoreline, 1 point if exact
@@ -31,7 +30,7 @@ free tiers below comfortably handle that.
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.example.txt .env
 ```
 
 Fill in `.env`:
@@ -101,7 +100,7 @@ Visit `http://localhost:3000`.
 ## 6. Deploy to Vercel
 
 ```bash
-npm install -g vercel   # if you don't have it
+npm install -g vercel
 vercel
 ```
 
