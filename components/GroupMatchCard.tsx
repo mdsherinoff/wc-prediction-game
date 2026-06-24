@@ -47,13 +47,16 @@ export default function GroupMatchCard({
     () => new Date(kickoffDate.getTime() - 60 * 60 * 1000),
     [match.kickoff],
   );
+  const [locked, setLocked] = useState(match.status !== "SCHEDULED");
+  useEffect(() => {
+    setLocked(new Date() >= lockTime || match.status !== "SCHEDULED");
+  }, [lockTime, match.status]);
   const openTime = useMemo(
     () => new Date(kickoffDate.getTime() - 16 * 60 * 60 * 1000),
     [match.kickoff],
   );
   const now = new Date();
   const notYetOpen = now < openTime && match.status === "SCHEDULED";
-  const locked = now >= lockTime || match.status !== "SCHEDULED";
 
   async function save() {
     setError(null);
@@ -83,13 +86,18 @@ export default function GroupMatchCard({
     }
   }
 
-  const kickoffLabel = kickoffDate.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const [kickoffLabel, setKickoffLabel] = useState("");
+  useEffect(() => {
+    setKickoffLabel(
+      kickoffDate.toLocaleString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    );
+  }, [match.kickoff]);
 
   return (
     <div className="ticket px-5 py-4 mx-2 relative">

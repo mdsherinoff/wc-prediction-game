@@ -60,7 +60,7 @@ export default function KnockoutMatchCard({
     existingPrediction?.homeScore,
     existingPrediction?.awayScore,
   ]);
-  
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -70,13 +70,16 @@ export default function KnockoutMatchCard({
     () => new Date(kickoffDate.getTime() - 60 * 60 * 1000),
     [match.kickoff],
   );
+  const [locked, setLocked] = useState(match.status !== "SCHEDULED");
+  useEffect(() => {
+    setLocked(new Date() >= lockTime || match.status !== "SCHEDULED");
+  }, [lockTime, match.status]);
   const openTime = useMemo(
     () => new Date(kickoffDate.getTime() - 16 * 60 * 60 * 1000),
     [match.kickoff],
   );
   const now = new Date();
   const notYetOpen = now < openTime && match.status === "SCHEDULED";
-  const locked = now >= lockTime || match.status !== "SCHEDULED";
   const teamsKnown = !!match.homeTeam && !!match.awayTeam;
 
   async function save() {
@@ -112,13 +115,18 @@ export default function KnockoutMatchCard({
     }
   }
 
-  const kickoffLabel = kickoffDate.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const [kickoffLabel, setKickoffLabel] = useState("");
+  useEffect(() => {
+    setKickoffLabel(
+      kickoffDate.toLocaleString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    );
+  }, [match.kickoff]);
 
   if (!teamsKnown) {
     return (
