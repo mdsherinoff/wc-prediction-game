@@ -5,6 +5,8 @@ import ResultRow from "@/components/ResultRow";
 import { stageLabel } from "@/lib/scoring";
 import { Stage } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 const KNOCKOUT_STAGE_ORDER: Stage[] = ["R32", "R16", "QF", "SF", "THIRD_PLACE", "FINAL"];
 
 export default async function ResultsPage() {

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 
-export const revalidate = 30; // refresh every 30s
+export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
   const users = await prisma.user.findMany({

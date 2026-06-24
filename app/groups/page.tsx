@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import GroupMatchCard from "@/components/GroupMatchCard";
 import MatchTabs from "@/components/MatchTabs";
 
+export const dynamic = "force-dynamic";
+
 async function getMatches(userId: string) {
   return prisma.match.findMany({
     where: { stage: "GROUP" },

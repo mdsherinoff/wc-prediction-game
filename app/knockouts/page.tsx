@@ -7,6 +7,8 @@ import { stageLabel } from "@/lib/scoring";
 import { Stage } from "@prisma/client";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const STAGE_ORDER: Stage[] = ["R32", "R16", "QF", "SF", "THIRD_PLACE", "FINAL"];
 
 async function getMatches(userId: string) {

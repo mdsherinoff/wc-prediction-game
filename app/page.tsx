@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import GroupMatchCard from "@/components/GroupMatchCard";
 import KnockoutMatchCard from "@/components/KnockoutMatchCard";
 
+export const dynamic = "force-dynamic";
+
 const TODAY_WINDOW_HOURS = 16;
 
 async function getTodaysMatches(userId: string) {
