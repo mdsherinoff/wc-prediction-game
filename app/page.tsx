@@ -10,7 +10,9 @@ const TODAY_WINDOW_HOURS = 16;
 
 async function getTodaysMatches(userId: string) {
   const now = new Date();
-  const windowEnd = new Date(now.getTime() + TODAY_WINDOW_HOURS * 60 * 60 * 1000);
+  const windowEnd = new Date(
+    now.getTime() + TODAY_WINDOW_HOURS * 60 * 60 * 1000,
+  );
 
   return prisma.match.findMany({
     where: {
@@ -51,8 +53,8 @@ export default async function HomePage() {
             Settle the bragging rights.
           </h1>
           <p className="text-chalk/80 max-w-xl mx-auto mb-8">
-            Score the group stage exactly right, call the knockout winners,
-            and build your bracket all the way to the final.
+            Score the group stage exactly right, call the knockout winners, and
+            build your bracket all the way to the final.
           </p>
           {!session?.user && (
             <Link
@@ -76,14 +78,17 @@ export default async function HomePage() {
           </p>
 
           {todaysMatches.length === 0 ? (
-            <p className="text-ink/40 text-sm ticket px-5 py-6 mx-2 text-center">
-              Nothing kicking off in the next {TODAY_WINDOW_HOURS} hours.
-              Check the{" "}
-              <Link href="/groups" className="text-turf underline">
+            <p
+              className="scoreboard-card text-sm px-5 py-6 mx-2 text-center"
+              style={{ color: "var(--board-text-muted)" }}
+            >
+              Nothing kicking off in the next {TODAY_WINDOW_HOURS} hours. Check
+              the{" "}
+              <Link href="/groups" className="text-[var(--amber)] underline">
                 Groups
               </Link>{" "}
               or{" "}
-              <Link href="/knockouts" className="text-turf underline">
+              <Link href="/knockouts" className="text-[var(--amber)] underline">
                 Knockouts
               </Link>{" "}
               pages for everything upcoming.
@@ -101,10 +106,16 @@ export default async function HomePage() {
                       homeScore: match.homeScore,
                       awayScore: match.awayScore,
                       homeTeam: match.homeTeam
-                        ? { name: match.homeTeam.name, flagUrl: match.homeTeam.flagUrl }
+                        ? {
+                            name: match.homeTeam.name,
+                            flagUrl: match.homeTeam.flagUrl,
+                          }
                         : null,
                       awayTeam: match.awayTeam
-                        ? { name: match.awayTeam.name, flagUrl: match.awayTeam.flagUrl }
+                        ? {
+                            name: match.awayTeam.name,
+                            flagUrl: match.awayTeam.flagUrl,
+                          }
                         : null,
                     }}
                     existingPrediction={match.groupPredictions[0] ?? null}
@@ -129,15 +140,17 @@ export default async function HomePage() {
                     existingPrediction={
                       match.knockoutPredictions[0]
                         ? {
-                            predictedWinner: match.knockoutPredictions[0].predictedWinner,
+                            predictedWinner:
+                              match.knockoutPredictions[0].predictedWinner,
                             homeScore: match.knockoutPredictions[0].homeScore,
                             awayScore: match.knockoutPredictions[0].awayScore,
-                            pointsAwarded: match.knockoutPredictions[0].pointsAwarded,
+                            pointsAwarded:
+                              match.knockoutPredictions[0].pointsAwarded,
                           }
                         : null
                     }
                   />
-                )
+                ),
               )}
             </div>
           )}
@@ -175,14 +188,22 @@ function RuleCard({
   body: string;
 }) {
   return (
-    <div className="ticket p-6">
-      <span className="font-display text-amber text-3xl font-700">
+    <div className="scoreboard-card p-6">
+      <span
+        className="font-display text-3xl font-700"
+        style={{
+          fontFamily: "'DSEG7 Classic', 'Barlow Condensed', monospace",
+          color: "var(--amber)",
+        }}
+      >
         {step}
       </span>
-      <h3 className="font-display text-xl font-700 text-pitch mt-1 mb-2">
+      <h3 className="font-display text-xl font-700 text-[var(--chalk)] mt-1 mb-2">
         {title}
       </h3>
-      <p className="text-sm text-ink/70">{body}</p>
+      <p className="text-sm" style={{ color: "rgba(245,243,236,0.7)" }}>
+        {body}
+      </p>
     </div>
   );
 }
