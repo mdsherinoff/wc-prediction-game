@@ -12,6 +12,9 @@ A simple prediction game for a friend group, built for the 2026 FIFA World Cup.
 
 Built for casual friend-group scale (tens of people), not high traffic - the
 free tiers below comfortably handle that.
+<img width="500" alt="SCR-20260624-jhmh" src="https://github.com/user-attachments/assets/d972fdd5-8a06-442a-8c19-ae59abf6eeae" />
+<img width="500" alt="SCR-20260624-jhwu" src="https://github.com/user-attachments/assets/2ffed6f3-1737-49bd-b95a-9e06fe43775d" />
+
 
 ---
 
