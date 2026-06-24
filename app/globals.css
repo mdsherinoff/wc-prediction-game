@@ -1,5 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=DSEG7+Classic:wght@700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +11,14 @@
   --ink: #13261f;
   --red: #c4453a;
   --line: #d8d3c3;
+
+  /* Scoreboard panel palette (v2 — lighter pitch-gray-green) */
+  --board-panel: #3d4a42;
+  --board-panel-border: rgba(0, 0, 0, 0.15);
+  --board-divider: rgba(255, 255, 255, 0.1);
+  --board-text-muted: rgba(245, 243, 236, 0.55);
+  --board-digit-bg: rgba(0, 0, 0, 0.35);
+  --board-digit-dim: #6b6354;
 }
 
 html,
@@ -28,53 +35,65 @@ body {
   font-family: "Barlow Condensed", system-ui, sans-serif;
 }
 
-/* Tabular score boxes - the signature element used for every score input/display */
-.score-box {
+/* Stadium scoreboard panel — replaces the old paper-ticket card */
+.scoreboard-card {
+  position: relative;
+  background: var(--board-panel);
+  border: 1px solid var(--board-panel-border);
+  border-radius: 6px;
+  overflow: hidden;
   font-family: "Barlow Condensed", system-ui, sans-serif;
+}
+
+/* Static/scanline texture overlay — purely visual, no motion */
+.scoreboard-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.scoreboard-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* DSEG7-style LED digit boxes — replaces the old dark score-box */
+.digit-box {
+  font-family: "DSEG7 Classic", "Barlow Condensed", monospace;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: var(--ink);
-  color: var(--chalk);
+  background: var(--board-digit-bg);
+  color: var(--amber);
   border-radius: 4px;
   text-align: center;
   line-height: 1;
 }
 
-.score-box input {
+.digit-box input {
   background: transparent;
   color: inherit;
+  font-family: inherit;
   text-align: center;
   width: 100%;
   outline: none;
 }
 
-/* Perforated ticket edge motif for match cards */
-.ticket {
-  position: relative;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+.digit-box input::placeholder {
+  color: var(--board-digit-dim);
 }
 
-.ticket::before,
-.ticket::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  background: var(--chalk);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.ticket::before {
-  left: -8px;
-}
-
-.ticket::after {
-  right: -8px;
+.digit-box.dim,
+.digit-box input:disabled {
+  color: var(--board-digit-dim);
 }
 
 @media (prefers-reduced-motion: no-preference) {

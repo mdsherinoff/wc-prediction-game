@@ -118,72 +118,102 @@ export default function KnockoutMatchCard({
   const [kickoffLabel, setKickoffLabel] = useState("");
   useEffect(() => {
     setKickoffLabel(
-      kickoffDate.toLocaleString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }),
+      kickoffDate
+        .toLocaleString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+        .toUpperCase(),
     );
   }, [match.kickoff]);
 
   if (!teamsKnown) {
     return (
-      <div className="ticket px-5 py-4 mx-2 text-ink/40 text-sm">
-        {kickoffLabel} — teams TBD (waiting on earlier rounds)
+      <div
+        className="scoreboard-card px-4 py-3 mx-2 text-sm"
+        style={{ color: "var(--board-text-muted)" }}
+      >
+        {kickoffLabel} — TEAMS TBD (WAITING ON EARLIER ROUNDS)
       </div>
     );
   }
 
+  const disabled = locked || notYetOpen;
+
   return (
-    <div className="ticket px-5 py-4 mx-2">
-      <div className="text-xs text-ink/50 mb-2 flex items-center gap-2">
-        <span>{kickoffLabel}</span>
+    <div className="scoreboard-card px-4 py-3 mx-2">
+      <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-[var(--board-divider)]">
+        <span
+          className="text-[11px] tracking-wide"
+          style={{ color: "var(--board-text-muted)" }}
+        >
+          {kickoffLabel}
+        </span>
+
         {match.status === "LIVE" && (
-          <span className="text-red font-semibold pulse-live">● LIVE</span>
+          <span className="text-[11px] font-bold tracking-wide text-[var(--amber)] pulse-live">
+            ● LIVE
+          </span>
         )}
         {locked && match.status === "SCHEDULED" && (
-          <span className="text-ink/40">Locked</span>
+          <span
+            className="text-[11px] font-bold tracking-wide"
+            style={{ color: "var(--board-text-muted)" }}
+          >
+            LOCKED
+          </span>
         )}
         {notYetOpen && (
-          <span className="text-ink/40">
-            Opens{" "}
-            {openTime.toLocaleString(undefined, {
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
+          <span
+            className="text-[11px] font-bold tracking-wide"
+            style={{ color: "var(--board-text-muted)" }}
+          >
+            OPENS{" "}
+            {openTime
+              .toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })
+              .toUpperCase()}
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         {[match.homeTeam, match.awayTeam].map((team) => (
           <button
             key={team!.id}
-            disabled={locked || notYetOpen}
+            disabled={disabled}
             onClick={() => setWinner(team!.id)}
-            className={`flex-1 min-w-[120px] text-sm font-medium px-3 py-2 rounded border transition ${
+            className={`flex-1 min-w-[120px] font-display text-sm font-bold tracking-wide px-3 py-2 rounded border transition ${
               winner === team!.id
-                ? "bg-turf text-chalk border-turf"
-                : "bg-white text-ink border-line hover:border-turf"
+                ? "bg-[var(--amber)] text-[var(--ink)] border-[var(--amber)]"
+                : "bg-transparent text-[var(--chalk)] border-[var(--board-divider)] hover:border-[var(--amber)]"
             } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
-            {team!.name}
+            {team!.name.toUpperCase()}
           </button>
         ))}
       </div>
 
-      {!locked && !notYetOpen && (
+      {!disabled && (
         <div className="mt-3">
-          <div className="text-xs text-ink/50 mb-1.5">
-            Optional score guess{" "}
-            <span className="text-ink/40">(+2 pts if exact)</span>
+          <div
+            className="text-[11px] mb-1.5 tracking-wide"
+            style={{ color: "var(--board-text-muted)" }}
+          >
+            OPTIONAL SCORE GUESS{" "}
+            <span style={{ color: "var(--board-digit-dim)" }}>
+              (+2 PTS IF EXACT)
+            </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="score-box w-9 h-9 text-base flex items-center justify-center shrink-0">
+            <div className="digit-box w-9 h-9 text-base flex items-center justify-center shrink-0">
               <input
                 type="number"
                 min={0}
@@ -194,8 +224,13 @@ export default function KnockoutMatchCard({
                 aria-label="Home score guess"
               />
             </div>
-            <span className="text-ink/40 shrink-0">-</span>
-            <div className="score-box w-9 h-9 text-base flex items-center justify-center shrink-0">
+            <span
+              className="shrink-0"
+              style={{ color: "var(--board-text-muted)" }}
+            >
+              -
+            </span>
+            <div className="digit-box w-9 h-9 text-base flex items-center justify-center shrink-0">
               <input
                 type="number"
                 min={0}
@@ -210,26 +245,26 @@ export default function KnockoutMatchCard({
             <button
               onClick={save}
               disabled={saving}
-              className="ml-auto bg-turf text-chalk text-xs font-semibold px-3 py-2 rounded hover:brightness-110 transition disabled:opacity-50 whitespace-nowrap"
+              className="ml-auto font-display text-xs font-bold tracking-wide px-4 py-1.5 rounded border border-[var(--amber)] text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[var(--ink)] transition disabled:opacity-50 whitespace-nowrap"
             >
-              {saving ? "..." : saved ? "Saved" : "Save"}
+              {saving ? "..." : saved ? "SAVED ✓" : "SAVE"}
             </button>
           </div>
         </div>
       )}
 
       {match.status === "FINISHED" && (
-        <div className="text-xs text-turf mt-2 font-semibold">
-          Final: {match.homeScore}-{match.awayScore}
+        <div className="text-xs mt-3 font-semibold text-[var(--amber)]">
+          FINAL: {match.homeScore}-{match.awayScore}
           {existingPrediction?.pointsAwarded != null && (
-            <span className="ml-2 text-amber">
+            <span className="ml-2 text-[var(--chalk)]">
               +{existingPrediction.pointsAwarded} pt
             </span>
           )}
         </div>
       )}
 
-      {error && <p className="text-red text-xs mt-2">{error}</p>}
+      {error && <p className="text-[var(--red)] text-xs mt-2">{error}</p>}
     </div>
   );
 }
