@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type Team = { name: string; flagUrl: string | null } | null;
 
@@ -28,14 +28,19 @@ export default function GroupMatchCard({
   existingPrediction: Prediction;
 }) {
   const [home, setHome] = useState<string>(
-    existingPrediction ? String(existingPrediction.homeScore) : ""
+    existingPrediction ? String(existingPrediction.homeScore) : "",
   );
   const [away, setAway] = useState<string>(
-    existingPrediction ? String(existingPrediction.awayScore) : ""
+    existingPrediction ? String(existingPrediction.awayScore) : "",
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setHome(existingPrediction ? String(existingPrediction.homeScore) : "");
+    setAway(existingPrediction ? String(existingPrediction.awayScore) : "");
+  }, [existingPrediction?.homeScore, existingPrediction?.awayScore]);
 
   const kickoffDate = new Date(match.kickoff);
   const lockTime = useMemo(

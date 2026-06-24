@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type Team = { id: string; name: string } | null;
 
@@ -30,14 +30,37 @@ export default function KnockoutMatchCard({
   existingPrediction: Prediction;
 }) {
   const [winner, setWinner] = useState<string | null>(
-    existingPrediction?.predictedWinner ?? null
+    existingPrediction?.predictedWinner ?? null,
   );
   const [home, setHome] = useState<string>(
-    existingPrediction?.homeScore != null ? String(existingPrediction.homeScore) : ""
+    existingPrediction?.homeScore != null
+      ? String(existingPrediction.homeScore)
+      : "",
   );
   const [away, setAway] = useState<string>(
-    existingPrediction?.awayScore != null ? String(existingPrediction.awayScore) : ""
+    existingPrediction?.awayScore != null
+      ? String(existingPrediction.awayScore)
+      : "",
   );
+
+  useEffect(() => {
+    setWinner(existingPrediction?.predictedWinner ?? null);
+    setHome(
+      existingPrediction?.homeScore != null
+        ? String(existingPrediction.homeScore)
+        : "",
+    );
+    setAway(
+      existingPrediction?.awayScore != null
+        ? String(existingPrediction.awayScore)
+        : "",
+    );
+  }, [
+    existingPrediction?.predictedWinner,
+    existingPrediction?.homeScore,
+    existingPrediction?.awayScore,
+  ]);
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
