@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pitch: #0b3d2e;
+  --turf: #1f6e4a;
+  --chalk: #f5f3ec;
+  --amber: #e8a33d;
+  --ink: #13261f;
+  --red: #c4453a;
+  --line: #d8d3c3;
+}
+
+html,
+body {
+  background-color: var(--chalk);
+  color: var(--ink);
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+}
+
+/* Tabular score boxes - the signature element used for every score input/display */
+.score-box {
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--ink);
+  color: var(--chalk);
+  border-radius: 4px;
+  text-align: center;
+  line-height: 1;
+}
+
+.score-box input {
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  width: 100%;
+  outline: none;
+}
+
+/* Perforated ticket edge motif for match cards */
+.ticket {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.ticket::before,
+.ticket::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--chalk);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ticket::before {
+  left: -8px;
+}
+
+.ticket::after {
+  right: -8px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-live {
+    animation: pulse-live 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}

@@ -1,0 +1,191 @@
+// Prisma schema for the World Cup 2026 Predictor
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts Account[]
+  sessions Session[]
+
+  groupPredictions    GroupPrediction[]
+  knockoutPredictions KnockoutPrediction[]
+  bracketPicks        BracketPick[]
+
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Stage {
+  GROUP
+  R32
+  R16
+  QF
+  SF
+  THIRD_PLACE
+  FINAL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+}
+
+model Team {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  fifaCode  String? @unique
+  flagUrl   String?
+  groupName String?
+
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+}
+
+// A single match, group or knockout.
+// externalId links to the football-data.org fixture id for automated result sync.
+model Match {
+  id         String      @id @default(cuid())
+  externalId String?     @unique
+  stage      Stage
+  groupName  String?
+  slotKey    String?     @unique
+
+  homeTeamId String?
+  awayTeamId String?
+  homeTeam   Team?       @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam   Team?       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  kickoff    DateTime
+  status     MatchStatus @default(SCHEDULED)
+
+  homeScore  Int? 
+  awayScore  Int?
+  wentToPens Boolean     @default(false)
+  penHomeScore Int?
+  penAwayScore Int?
+
+  winnerTeamId String?
+
+  groupPredictions    GroupPrediction[]
+  knockoutPredictions KnockoutPrediction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage])
+  @@index([kickoff])
+}
+
+
+model GroupPrediction {
+  id        String   @id @default(cuid())
+  userId    String
+  matchId   String
+  homeScore Int
+  awayScore Int
+
+  pointsAwarded Int?     // filled in once match finishes & is scored; null until then
+  scoredAt      DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, matchId])
+}
+
+model KnockoutPrediction {
+  id              String  @id @default(cuid())
+  userId          String
+  matchId         String
+  predictedWinner String 
+  homeScore       Int?   
+  awayScore       Int?
+
+  pointsAwarded Int?
+  scoredAt      DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, matchId])
+}
+
+
+model BracketPick {
+  id      String @id @default(cuid())
+  userId  String
+  stage   Stage // R32, R16, QF, SF, FINAL, THIRD_PLACE (the round being predicted)
+  slotKey String // matches Match.slotKey this pick is about
+  teamId  String // the team this user predicts will win that slot
+
+  pointsAwarded Int?
+  scoredAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, slotKey])
+  @@index([stage])
+}
+
+// Simple global setting flags, e.g. whether knockout bracket stage has unlocked.
+model Setting {
+  key   String @id
+  value String
+}
