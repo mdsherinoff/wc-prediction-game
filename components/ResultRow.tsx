@@ -21,37 +21,55 @@ export default function ResultRow({
   penAwayScore?: number | null;
   userPoints?: number | null;
 }) {
-  const kickoffLabel = new Date(kickoff).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const kickoffLabel = new Date(kickoff)
+    .toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    })
+    .toUpperCase();
 
   return (
-    <div className="ticket px-5 py-3 mx-2 flex items-center justify-between gap-4">
+    <div className="scoreboard-card px-4 py-3 mx-2 flex items-center justify-between gap-4">
       <div className="flex-1 min-w-0">
-        <div className="text-xs text-ink/40 mb-0.5">{kickoffLabel}</div>
-        <div className="font-medium text-ink truncate">
-          {homeTeam?.name ?? "TBD"}{" "}
-          <span className="text-ink/40">vs</span> {awayTeam?.name ?? "TBD"}
+        <div
+          className="text-[11px] tracking-wide mb-1"
+          style={{ color: "var(--board-text-muted)" }}
+        >
+          {kickoffLabel}
+        </div>
+        <div className="font-display font-bold text-base tracking-wide text-[var(--chalk)] truncate">
+          {homeTeam?.name?.toUpperCase() ?? "TBD"}{" "}
+          <span style={{ color: "var(--board-text-muted)" }}>VS</span>{" "}
+          {awayTeam?.name?.toUpperCase() ?? "TBD"}
         </div>
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
-        <div className="score-box w-10 h-10 text-lg flex items-center justify-center">
+        <div className="digit-box w-10 h-10 text-lg flex items-center justify-center">
           {homeScore ?? "-"}
         </div>
-        <span className="text-ink/40 font-display">-</span>
-        <div className="score-box w-10 h-10 text-lg flex items-center justify-center">
+        <span
+          className="font-display"
+          style={{ color: "var(--board-text-muted)" }}
+        >
+          -
+        </span>
+        <div className="digit-box w-10 h-10 text-lg flex items-center justify-center">
           {awayScore ?? "-"}
         </div>
+
         {wentToPens && (
-          <span className="text-xs text-ink/40">
-            (pens {penHomeScore}-{penAwayScore})
+          <span
+            className="text-xs whitespace-nowrap"
+            style={{ color: "var(--board-text-muted)" }}
+          >
+            (PENS {penHomeScore}-{penAwayScore})
           </span>
         )}
+
         {userPoints != null && (
-          <span className="text-xs font-semibold text-amber whitespace-nowrap">
+          <span className="text-xs font-semibold text-[var(--amber)] whitespace-nowrap">
             +{userPoints} pt
           </span>
         )}

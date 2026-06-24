@@ -23,7 +23,7 @@ export default async function LeaderboardPage() {
     .map((u) => {
       const groupPoints = sum(u.groupPredictions.map((p) => p.pointsAwarded));
       const knockoutPoints = sum(
-        u.knockoutPredictions.map((p) => p.pointsAwarded)
+        u.knockoutPredictions.map((p) => p.pointsAwarded),
       );
       const bracketPoints = sum(u.bracketPicks.map((p) => p.pointsAwarded));
       const adjustmentPoints = u.manualAdjustment?.points ?? 0;
@@ -50,29 +50,32 @@ export default async function LeaderboardPage() {
         correct advancer picks.
       </p>
 
-      <div className="ticket overflow-x-auto">
+      <div className="scoreboard-card overflow-x-auto">
         <table className="w-full text-sm min-w-[540px]">
           <thead>
-            <tr className="bg-pitch text-chalk text-left">
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">
+            <tr
+              style={{ background: "rgba(0,0,0,0.25)" }}
+              className="text-left"
+            >
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)]">
                 #
               </th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)]">
                 Player
               </th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)] text-right">
                 Groups
               </th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)] text-right">
                 Knockouts
               </th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)] text-right">
                 Bracket
               </th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)] text-right">
                 Adj.
               </th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-[12px] tracking-wide text-[var(--amber)] text-right">
                 Total
               </th>
             </tr>
@@ -81,15 +84,22 @@ export default async function LeaderboardPage() {
             {rows.map((r, i) => (
               <tr
                 key={r.id}
-                className={`border-t border-line ${
-                  i === 0 ? "bg-amber/10" : ""
-                }`}
+                className="border-t border-[var(--board-divider)]"
+                style={
+                  i === 0 ? { background: "rgba(232,163,61,0.08)" } : undefined
+                }
               >
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-turf">
+                <td
+                  className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-[16px] text-[var(--amber)]"
+                  style={{
+                    fontFamily:
+                      "'DSEG7 Classic', 'Barlow Condensed', monospace",
+                  }}
+                >
                   {i + 1}
                 </td>
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 flex items-center gap-2">
-                  {r.image && (
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 flex items-center gap-2 text-[var(--chalk)]">
+                  {r.image ? (
                     <Image
                       src={r.image}
                       alt={r.name}
@@ -97,37 +107,73 @@ export default async function LeaderboardPage() {
                       height={24}
                       className="rounded-full"
                     />
+                  ) : (
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center font-display font-700 text-[10px] text-[var(--amber)] shrink-0"
+                      style={{ background: "rgba(0,0,0,0.3)" }}
+                    >
+                      {r.name
+                        .split(" ")
+                        .map((p) => p[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase()}
+                    </span>
                   )}
                   {r.name}
                 </td>
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
+                <td
+                  className="py-2.5 px-3 sm:py-3 sm:px-4 text-right"
+                  style={{ color: "rgba(245,243,236,0.7)" }}
+                >
                   {r.groupPoints}
                 </td>
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
+                <td
+                  className="py-2.5 px-3 sm:py-3 sm:px-4 text-right"
+                  style={{ color: "rgba(245,243,236,0.7)" }}
+                >
                   {r.knockoutPoints}
                 </td>
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
+                <td
+                  className="py-2.5 px-3 sm:py-3 sm:px-4 text-right"
+                  style={{ color: "rgba(245,243,236,0.7)" }}
+                >
                   {r.bracketPoints}
                 </td>
                 <td
                   className={`py-2.5 px-3 sm:py-3 sm:px-4 text-right ${
                     r.adjustmentPoints !== 0
-                      ? "text-amber font-semibold"
-                      : "text-ink/30"
+                      ? "text-[var(--amber)] font-semibold"
+                      : ""
                   }`}
+                  style={
+                    r.adjustmentPoints === 0
+                      ? { color: "rgba(245,243,236,0.3)" }
+                      : undefined
+                  }
                 >
                   {r.adjustmentPoints > 0
                     ? `+${r.adjustmentPoints}`
                     : r.adjustmentPoints}
                 </td>
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right font-display font-700 text-lg text-pitch">
+                <td
+                  className="py-2.5 px-3 sm:py-3 sm:px-4 text-right font-display font-700 text-lg text-[var(--amber)]"
+                  style={{
+                    fontFamily:
+                      "'DSEG7 Classic', 'Barlow Condensed', monospace",
+                  }}
+                >
                   {r.total}
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-ink/40">
+                <td
+                  colSpan={7}
+                  className="py-8 text-center"
+                  style={{ color: "rgba(245,243,236,0.4)" }}
+                >
                   No predictions scored yet.
                 </td>
               </tr>

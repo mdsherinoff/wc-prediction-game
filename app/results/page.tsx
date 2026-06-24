@@ -7,7 +7,14 @@ import { Stage } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-const KNOCKOUT_STAGE_ORDER: Stage[] = ["R32", "R16", "QF", "SF", "THIRD_PLACE", "FINAL"];
+const KNOCKOUT_STAGE_ORDER: Stage[] = [
+  "R32",
+  "R16",
+  "QF",
+  "SF",
+  "THIRD_PLACE",
+  "FINAL",
+];
 
 export default async function ResultsPage() {
   const session = await auth();
@@ -30,7 +37,10 @@ export default async function ResultsPage() {
   if (finishedMatches.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center text-ink/60">
-        <p>No matches have finished yet — results will show up here as soon as they do.</p>
+        <p>
+          No matches have finished yet — results will show up here as soon as
+          they do.
+        </p>
       </div>
     );
   }
@@ -116,12 +126,14 @@ export default async function ResultsPage() {
                       wentToPens={m.wentToPens}
                       penHomeScore={m.penHomeScore}
                       penAwayScore={m.penAwayScore}
-                      userPoints={m.knockoutPredictions[0]?.pointsAwarded ?? null}
+                      userPoints={
+                        m.knockoutPredictions[0]?.pointsAwarded ?? null
+                      }
                     />
                   ))}
                 </div>
               </section>
-            )
+            ),
           )}
         </>
       )}
