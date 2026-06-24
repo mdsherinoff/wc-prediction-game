@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import AdminSyncButton from "@/components/AdminSyncButton";
 import AdminMatchRow from "@/components/AdminMatchRow";
 import AdminAdjustmentRow from "@/components/AdminAdjustmentRow";
+import Link from "next/link";
 
 export default async function AdminPage() {
   const session = await requireAdmin();
@@ -28,7 +29,15 @@ export default async function AdminPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="font-display text-3xl font-700 text-pitch mb-1">Admin</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="font-display text-3xl font-700 text-pitch">Admin</h1>
+        <Link
+          href="/admin/reports"
+          className="text-sm bg-turf text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110"
+        >
+          View reports →
+        </Link>
+      </div>
       <p className="text-sm text-ink/60 mb-6">
         Bracket predictor status:{" "}
         <span className="font-semibold">
