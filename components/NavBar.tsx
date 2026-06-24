@@ -24,6 +24,9 @@ export default function NavBar({ user }: { user: NavUser }) {
           <Link href="/knockouts" className="hover:text-amber transition-colors">
             Knockouts
           </Link>
+          <Link href="/results" className="hover:text-amber transition-colors">
+            Results
+          </Link>
           <Link href="/leaderboard" className="hover:text-amber transition-colors">
             Leaderboard
           </Link>

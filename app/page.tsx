@@ -1,8 +1,40 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import GroupMatchCard from "@/components/GroupMatchCard";
+import KnockoutMatchCard from "@/components/KnockoutMatchCard";
+
+const TODAY_WINDOW_HOURS = 16;
+
+async function getTodaysMatches(userId: string) {
+  const now = new Date();
+  const windowEnd = new Date(now.getTime() + TODAY_WINDOW_HOURS * 60 * 60 * 1000);
+
+  return prisma.match.findMany({
+    where: {
+      status: { not: "FINISHED" },
+      OR: [
+        // Upcoming, kicking off within the window
+        { kickoff: { gte: now, lte: windowEnd } },
+        // Already underway (kickoff in the past but not finished)
+        { status: "LIVE" },
+      ],
+    },
+    include: {
+      homeTeam: true,
+      awayTeam: true,
+      groupPredictions: { where: { userId } },
+      knockoutPredictions: { where: { userId } },
+    },
+    orderBy: { kickoff: "asc" },
+  });
+}
 
 export default async function HomePage() {
   const session = await auth();
+  const todaysMatches = session?.user?.id
+    ? await getTodaysMatches(session.user.id)
+    : [];
 
   return (
     <div>
@@ -20,14 +52,7 @@ export default async function HomePage() {
             Score the group stage exactly right, call the knockout winners,
             and build your bracket all the way to the final.
           </p>
-          {session?.user ? (
-            <Link
-              href="/groups"
-              className="inline-block bg-amber text-ink font-semibold px-6 py-3 rounded-lg hover:brightness-95 transition"
-            >
-              Make your predictions
-            </Link>
-          ) : (
+          {!session?.user && (
             <Link
               href="/login"
               className="inline-block bg-amber text-ink font-semibold px-6 py-3 rounded-lg hover:brightness-95 transition"
@@ -37,6 +62,85 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {session?.user && (
+        <section className="max-w-3xl mx-auto px-4 py-10">
+          <h2 className="font-display text-2xl font-700 text-pitch mb-1">
+            Today&apos;s matches
+          </h2>
+          <p className="text-sm text-ink/60 mb-6">
+            Kicking off in the next {TODAY_WINDOW_HOURS} hours — predict them
+            right here.
+          </p>
+
+          {todaysMatches.length === 0 ? (
+            <p className="text-ink/40 text-sm ticket px-5 py-6 mx-2 text-center">
+              Nothing kicking off in the next {TODAY_WINDOW_HOURS} hours.
+              Check the{" "}
+              <Link href="/groups" className="text-turf underline">
+                Groups
+              </Link>{" "}
+              or{" "}
+              <Link href="/knockouts" className="text-turf underline">
+                Knockouts
+              </Link>{" "}
+              pages for everything upcoming.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {todaysMatches.map((match) =>
+                match.stage === "GROUP" ? (
+                  <GroupMatchCard
+                    key={match.id}
+                    match={{
+                      id: match.id,
+                      kickoff: match.kickoff.toISOString(),
+                      status: match.status,
+                      homeScore: match.homeScore,
+                      awayScore: match.awayScore,
+                      homeTeam: match.homeTeam
+                        ? { name: match.homeTeam.name, flagUrl: match.homeTeam.flagUrl }
+                        : null,
+                      awayTeam: match.awayTeam
+                        ? { name: match.awayTeam.name, flagUrl: match.awayTeam.flagUrl }
+                        : null,
+                    }}
+                    existingPrediction={match.groupPredictions[0] ?? null}
+                  />
+                ) : (
+                  <KnockoutMatchCard
+                    key={match.id}
+                    match={{
+                      id: match.id,
+                      kickoff: match.kickoff.toISOString(),
+                      status: match.status,
+                      homeScore: match.homeScore,
+                      awayScore: match.awayScore,
+                      winnerTeamId: match.winnerTeamId,
+                      homeTeam: match.homeTeam
+                        ? { id: match.homeTeam.id, name: match.homeTeam.name }
+                        : null,
+                      awayTeam: match.awayTeam
+                        ? { id: match.awayTeam.id, name: match.awayTeam.name }
+                        : null,
+                    }}
+                    existingPrediction={
+                      match.knockoutPredictions[0]
+                        ? {
+                            predictedWinner: match.knockoutPredictions[0].predictedWinner,
+                            homeScore: match.knockoutPredictions[0].homeScore,
+                            awayScore: match.knockoutPredictions[0].awayScore,
+                            pointsAwarded: match.knockoutPredictions[0].pointsAwarded,
+                          }
+                        : null
+                    }
+                  />
+                )
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="max-w-5xl mx-auto px-4 py-12 grid sm:grid-cols-3 gap-6">
         <RuleCard
