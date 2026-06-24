@@ -22,6 +22,7 @@ model User {
   groupPredictions    GroupPrediction[]
   knockoutPredictions KnockoutPrediction[]
   bracketPicks        BracketPick[]
+  manualAdjustment    ManualAdjustment?
 
   createdAt DateTime @default(now())
 }
@@ -92,23 +93,23 @@ model Team {
 // A single match, group or knockout.
 // externalId links to the football-data.org fixture id for automated result sync.
 model Match {
-  id         String      @id @default(cuid())
-  externalId String?     @unique
+  id         String  @id @default(cuid())
+  externalId String? @unique
   stage      Stage
   groupName  String?
-  slotKey    String?     @unique
+  slotKey    String? @unique
 
   homeTeamId String?
   awayTeamId String?
-  homeTeam   Team?       @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam   Team?       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam   Team?   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam   Team?   @relation("AwayTeam", fields: [awayTeamId], references: [id])
 
-  kickoff    DateTime
-  status     MatchStatus @default(SCHEDULED)
+  kickoff DateTime
+  status  MatchStatus @default(SCHEDULED)
 
-  homeScore  Int? 
-  awayScore  Int?
-  wentToPens Boolean     @default(false)
+  homeScore    Int?
+  awayScore    Int?
+  wentToPens   Boolean @default(false)
   penHomeScore Int?
   penAwayScore Int?
 
@@ -124,15 +125,14 @@ model Match {
   @@index([kickoff])
 }
 
-
 model GroupPrediction {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   userId    String
   matchId   String
   homeScore Int
   awayScore Int
 
-  pointsAwarded Int?     // filled in once match finishes & is scored; null until then
+  pointsAwarded Int? // filled in once match finishes & is scored; null until then
   scoredAt      DateTime?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -145,11 +145,11 @@ model GroupPrediction {
 }
 
 model KnockoutPrediction {
-  id              String  @id @default(cuid())
+  id              String @id @default(cuid())
   userId          String
   matchId         String
-  predictedWinner String 
-  homeScore       Int?   
+  predictedWinner String
+  homeScore       Int?
   awayScore       Int?
 
   pointsAwarded Int?
@@ -163,7 +163,6 @@ model KnockoutPrediction {
 
   @@unique([userId, matchId])
 }
-
 
 model BracketPick {
   id      String @id @default(cuid())
@@ -188,4 +187,16 @@ model BracketPick {
 model Setting {
   key   String @id
   value String
+}
+
+model ManualAdjustment {
+  id     String  @id @default(cuid())
+  userId String  @unique
+  points Int
+  note   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

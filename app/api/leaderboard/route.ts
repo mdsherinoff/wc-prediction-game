@@ -10,6 +10,7 @@ export async function GET() {
       groupPredictions: { select: { pointsAwarded: true } },
       knockoutPredictions: { select: { pointsAwarded: true } },
       bracketPicks: { select: { pointsAwarded: true } },
+      manualAdjustment: { select: { points: true } },
     },
   });
 
@@ -20,9 +21,10 @@ export async function GET() {
     .map((u) => {
       const groupPoints = sum(u.groupPredictions.map((p) => p.pointsAwarded));
       const knockoutPoints = sum(
-        u.knockoutPredictions.map((p) => p.pointsAwarded)
+        u.knockoutPredictions.map((p) => p.pointsAwarded),
       );
       const bracketPoints = sum(u.bracketPicks.map((p) => p.pointsAwarded));
+      const adjustmentPoints = u.manualAdjustment?.points ?? 0;
       return {
         userId: u.id,
         name: u.name,
@@ -30,7 +32,9 @@ export async function GET() {
         groupPoints,
         knockoutPoints,
         bracketPoints,
-        totalPoints: groupPoints + knockoutPoints + bracketPoints,
+        adjustmentPoints,
+        totalPoints:
+          groupPoints + knockoutPoints + bracketPoints + adjustmentPoints,
       };
     })
     .sort((a, b) => b.totalPoints - a.totalPoints);

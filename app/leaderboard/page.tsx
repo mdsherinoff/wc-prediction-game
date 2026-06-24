@@ -12,6 +12,7 @@ export default async function LeaderboardPage() {
       groupPredictions: { select: { pointsAwarded: true } },
       knockoutPredictions: { select: { pointsAwarded: true } },
       bracketPicks: { select: { pointsAwarded: true } },
+      manualAdjustment: { select: { points: true } },
     },
   });
 
@@ -25,6 +26,7 @@ export default async function LeaderboardPage() {
         u.knockoutPredictions.map((p) => p.pointsAwarded)
       );
       const bracketPoints = sum(u.bracketPicks.map((p) => p.pointsAwarded));
+      const adjustmentPoints = u.manualAdjustment?.points ?? 0;
       return {
         id: u.id,
         name: u.name ?? "Anonymous",
@@ -32,7 +34,8 @@ export default async function LeaderboardPage() {
         groupPoints,
         knockoutPoints,
         bracketPoints,
-        total: groupPoints + knockoutPoints + bracketPoints,
+        adjustmentPoints,
+        total: groupPoints + knockoutPoints + bracketPoints + adjustmentPoints,
       };
     })
     .sort((a, b) => b.total - a.total);
@@ -48,11 +51,15 @@ export default async function LeaderboardPage() {
       </p>
 
       <div className="ticket overflow-x-auto">
-        <table className="w-full text-sm min-w-[480px]">
+        <table className="w-full text-sm min-w-[540px]">
           <thead>
             <tr className="bg-pitch text-chalk text-left">
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">#</th>
-              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">Player</th>
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">
+                #
+              </th>
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">
+                Player
+              </th>
               <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
                 Groups
               </th>
@@ -61,6 +68,9 @@ export default async function LeaderboardPage() {
               </th>
               <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
                 Bracket
+              </th>
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
+                Adj.
               </th>
               <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-right">
                 Total
@@ -98,6 +108,17 @@ export default async function LeaderboardPage() {
                 </td>
                 <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
                   {r.bracketPoints}
+                </td>
+                <td
+                  className={`py-2.5 px-3 sm:py-3 sm:px-4 text-right ${
+                    r.adjustmentPoints !== 0
+                      ? "text-amber font-semibold"
+                      : "text-ink/30"
+                  }`}
+                >
+                  {r.adjustmentPoints > 0
+                    ? `+${r.adjustmentPoints}`
+                    : r.adjustmentPoints}
                 </td>
                 <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right font-display font-700 text-lg text-pitch">
                   {r.total}
