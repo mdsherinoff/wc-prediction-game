@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { auth } from "@/auth";
 import NavBar from "@/components/NavBar";
 import "./globals.css";
@@ -25,6 +26,7 @@ export default async function RootLayout({
             Friends prediction pool · World Cup 2026
           </footer>
         </div>
+        <Analytics />
       </body>
     </html>
   );
