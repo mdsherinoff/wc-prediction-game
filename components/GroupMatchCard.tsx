@@ -148,6 +148,7 @@ export default function GroupMatchCard({
               max={20}
               inputMode="numeric"
               disabled={locked || notYetOpen}
+              value={home}
               onChange={(e) => setHome(e.target.value)}
               aria-label={`${match.homeTeam?.name ?? "Home"} score prediction`}
             />
@@ -160,6 +161,7 @@ export default function GroupMatchCard({
               max={20}
               inputMode="numeric"
               disabled={locked || notYetOpen}
+              value={away}
               onChange={(e) => setAway(e.target.value)}
               aria-label={`${match.awayTeam?.name ?? "Away"} score prediction`}
             />
