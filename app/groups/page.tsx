@@ -92,6 +92,9 @@ export default async function GroupsPage() {
 
   const matches = await getMatches(session.user.id);
 
+  console.log("DEBUG session.user.id:", session.user.id);
+  console.log("DEBUG session.user.email:", session.user.email);
+
   if (matches.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center text-ink/60">
