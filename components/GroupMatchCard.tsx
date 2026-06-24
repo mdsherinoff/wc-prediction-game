@@ -81,73 +81,75 @@ export default function GroupMatchCard({
   });
 
   return (
-    <div className="ticket px-5 py-4 flex items-center justify-between gap-4 mx-2">
-      <div className="flex-1 min-w-0">
-        <div className="text-xs text-ink/50 mb-1 flex items-center gap-2">
-          <span>{kickoffLabel}</span>
-          {match.status === "LIVE" && (
-            <span className="text-red font-semibold pulse-live">● LIVE</span>
-          )}
-          {locked && match.status === "SCHEDULED" && (
-            <span className="text-ink/40">🔒 Locked</span>
-          )}
-        </div>
-        <div className="font-medium text-ink truncate">
-          {match.homeTeam?.name ?? "TBD"}{" "}
-          <span className="text-ink/40">vs</span> {match.awayTeam?.name ?? "TBD"}
-        </div>
-        {match.status === "FINISHED" && (
-          <div className="text-xs text-turf mt-1 font-semibold">
-            Final: {match.homeScore}–{match.awayScore}
-            {existingPrediction?.pointsAwarded != null && (
-              <span className="ml-2 text-amber">
-                +{existingPrediction.pointsAwarded} pt
-              </span>
+    <div className="ticket px-5 py-4 mx-2 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="text-xs text-ink/50 mb-1 flex items-center gap-2">
+            <span>{kickoffLabel}</span>
+            {match.status === "LIVE" && (
+              <span className="text-red font-semibold pulse-live">● LIVE</span>
+            )}
+            {locked && match.status === "SCHEDULED" && (
+              <span className="text-ink/40">🔒 Locked</span>
             )}
           </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="score-box w-12 h-12 text-2xl flex items-center justify-center">
-          <input
-            type="number"
-            min={0}
-            max={20}
-            inputMode="numeric"
-            disabled={locked}
-            value={home}
-            onChange={(e) => setHome(e.target.value)}
-            aria-label={`${match.homeTeam?.name ?? "Home"} score prediction`}
-          />
-        </div>
-        <span className="text-ink/40 font-display text-xl">–</span>
-        <div className="score-box w-12 h-12 text-2xl flex items-center justify-center">
-          <input
-            type="number"
-            min={0}
-            max={20}
-            inputMode="numeric"
-            disabled={locked}
-            value={away}
-            onChange={(e) => setAway(e.target.value)}
-            aria-label={`${match.awayTeam?.name ?? "Away"} score prediction`}
-          />
+          <div className="font-medium text-ink">
+            {match.homeTeam?.name ?? "TBD"}{" "}
+            <span className="text-ink/40">vs</span> {match.awayTeam?.name ?? "TBD"}
+          </div>
+          {match.status === "FINISHED" && (
+            <div className="text-xs text-turf mt-1 font-semibold">
+              Final: {match.homeScore}–{match.awayScore}
+              {existingPrediction?.pointsAwarded != null && (
+                <span className="ml-2 text-amber">
+                  +{existingPrediction.pointsAwarded} pt
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {!locked && (
-          <button
-            onClick={save}
-            disabled={saving}
-            className="ml-2 bg-turf text-chalk text-xs font-semibold px-3 py-2 rounded hover:brightness-110 transition disabled:opacity-50"
-          >
-            {saving ? "..." : saved ? "Saved ✓" : "Save"}
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="score-box w-12 h-12 text-2xl flex items-center justify-center">
+            <input
+              type="number"
+              min={0}
+              max={20}
+              inputMode="numeric"
+              disabled={locked}
+              value={home}
+              onChange={(e) => setHome(e.target.value)}
+              aria-label={`${match.homeTeam?.name ?? "Home"} score prediction`}
+            />
+          </div>
+          <span className="text-ink/40 font-display text-xl">–</span>
+          <div className="score-box w-12 h-12 text-2xl flex items-center justify-center">
+            <input
+              type="number"
+              min={0}
+              max={20}
+              inputMode="numeric"
+              disabled={locked}
+              value={away}
+              onChange={(e) => setAway(e.target.value)}
+              aria-label={`${match.awayTeam?.name ?? "Away"} score prediction`}
+            />
+          </div>
+
+          {!locked && (
+            <button
+              onClick={save}
+              disabled={saving}
+              className="ml-2 bg-turf text-chalk text-xs font-semibold px-3 py-2 rounded hover:brightness-110 transition disabled:opacity-50 whitespace-nowrap"
+            >
+              {saving ? "..." : saved ? "Saved ✓" : "Save"}
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
-        <p className="text-red text-xs absolute -bottom-5 left-5">{error}</p>
+        <p className="text-red text-xs mt-2">{error}</p>
       )}
     </div>
   );

@@ -47,22 +47,22 @@ export default async function LeaderboardPage() {
         correct advancer picks.
       </p>
 
-      <div className="ticket overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="ticket overflow-x-auto">
+        <table className="w-full text-sm min-w-[480px]">
           <thead>
             <tr className="bg-pitch text-chalk text-left">
-              <th className="py-3 px-4 font-display font-600">#</th>
-              <th className="py-3 px-4 font-display font-600">Player</th>
-              <th className="py-3 px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">#</th>
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600">Player</th>
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
                 Groups
               </th>
-              <th className="py-3 px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
                 Knockouts
               </th>
-              <th className="py-3 px-4 font-display font-600 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-600 text-right">
                 Bracket
               </th>
-              <th className="py-3 px-4 font-display font-700 text-right">
+              <th className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-right">
                 Total
               </th>
             </tr>
@@ -75,10 +75,10 @@ export default async function LeaderboardPage() {
                   i === 0 ? "bg-amber/10" : ""
                 }`}
               >
-                <td className="py-3 px-4 font-display font-700 text-turf">
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 font-display font-700 text-turf">
                   {i + 1}
                 </td>
-                <td className="py-3 px-4 flex items-center gap-2">
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 flex items-center gap-2">
                   {r.image && (
                     <Image
                       src={r.image}
@@ -90,16 +90,16 @@ export default async function LeaderboardPage() {
                   )}
                   {r.name}
                 </td>
-                <td className="py-3 px-4 text-right text-ink/70">
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
                   {r.groupPoints}
                 </td>
-                <td className="py-3 px-4 text-right text-ink/70">
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
                   {r.knockoutPoints}
                 </td>
-                <td className="py-3 px-4 text-right text-ink/70">
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-ink/70">
                   {r.bracketPoints}
                 </td>
-                <td className="py-3 px-4 text-right font-display font-700 text-lg text-pitch">
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right font-display font-700 text-lg text-pitch">
                   {r.total}
                 </td>
               </tr>

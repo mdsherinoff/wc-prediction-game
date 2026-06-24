@@ -129,40 +129,43 @@ export default function KnockoutMatchCard({
       </div>
 
       {!locked && (
-        <div className="flex items-center gap-2 mt-3">
-          <span className="text-xs text-ink/50">Optional score guess:</span>
-          <div className="score-box w-9 h-9 text-base flex items-center justify-center">
-            <input
-              type="number"
-              min={0}
-              max={20}
-              inputMode="numeric"
-              value={home}
-              onChange={(e) => setHome(e.target.value)}
-              aria-label="Home score guess"
-            />
+        <div className="mt-3">
+          <div className="text-xs text-ink/50 mb-1.5">
+            Optional score guess <span className="text-ink/40">(+2 pts if exact)</span>
           </div>
-          <span className="text-ink/40">-</span>
-          <div className="score-box w-9 h-9 text-base flex items-center justify-center">
-            <input
-              type="number"
-              min={0}
-              max={20}
-              inputMode="numeric"
-              value={away}
-              onChange={(e) => setAway(e.target.value)}
-              aria-label="Away score guess"
-            />
-          </div>
-          <span className="text-xs text-ink/40">(+2 pts if exact)</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="score-box w-9 h-9 text-base flex items-center justify-center shrink-0">
+              <input
+                type="number"
+                min={0}
+                max={20}
+                inputMode="numeric"
+                value={home}
+                onChange={(e) => setHome(e.target.value)}
+                aria-label="Home score guess"
+              />
+            </div>
+            <span className="text-ink/40 shrink-0">-</span>
+            <div className="score-box w-9 h-9 text-base flex items-center justify-center shrink-0">
+              <input
+                type="number"
+                min={0}
+                max={20}
+                inputMode="numeric"
+                value={away}
+                onChange={(e) => setAway(e.target.value)}
+                aria-label="Away score guess"
+              />
+            </div>
 
-          <button
-            onClick={save}
-            disabled={saving}
-            className="ml-auto bg-turf text-chalk text-xs font-semibold px-3 py-2 rounded hover:brightness-110 transition disabled:opacity-50"
-          >
-            {saving ? "..." : saved ? "Saved" : "Save"}
-          </button>
+            <button
+              onClick={save}
+              disabled={saving}
+              className="ml-auto bg-turf text-chalk text-xs font-semibold px-3 py-2 rounded hover:brightness-110 transition disabled:opacity-50 whitespace-nowrap"
+            >
+              {saving ? "..." : saved ? "Saved" : "Save"}
+            </button>
+          </div>
         </div>
       )}
 

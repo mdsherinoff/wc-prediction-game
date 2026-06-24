@@ -43,7 +43,7 @@ export default async function HomePage() {
           <p className="font-display text-amber tracking-[0.3em] text-sm mb-3">
             FIFA WORLD CUP 2026 · USA · MEXICO · CANADA
           </p>
-          <h1 className="font-display text-5xl sm:text-6xl font-800 mb-4">
+          <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-800 mb-4 leading-tight">
             Predict every match.
             <br />
             Settle the bragging rights.
