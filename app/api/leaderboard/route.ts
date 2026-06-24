@@ -14,7 +14,7 @@ export async function GET() {
   });
 
   const sum = (vals: (number | null)[]) =>
-    vals.reduce((acc, v) => acc + (v ?? 0), 0);
+    vals.reduce((acc: number, v) => acc + (v ?? 0), 0);
 
   const leaderboard = users
     .map((u) => {

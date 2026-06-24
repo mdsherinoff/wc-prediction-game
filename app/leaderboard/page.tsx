@@ -16,7 +16,7 @@ export default async function LeaderboardPage() {
   });
 
   const sum = (vals: (number | null)[]) =>
-    vals.reduce((acc, v) => acc + (v ?? 0), 0);
+    vals.reduce((acc: number, v) => acc + (v ?? 0), 0);
 
   const rows = users
     .map((u) => {
