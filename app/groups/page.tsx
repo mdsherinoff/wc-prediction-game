@@ -92,9 +92,6 @@ export default async function GroupsPage() {
 
   const matches = await getMatches(session.user.id);
 
-  console.log("DEBUG session.user.id:", session.user.id);
-  console.log("DEBUG session.user.email:", session.user.email);
-
   if (matches.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center text-ink/60">
@@ -114,9 +111,10 @@ export default async function GroupsPage() {
       <h1 className="font-display text-3xl font-700 text-pitch mb-1">
         Group stage predictions
       </h1>
-      <p className="text-sm text-ink/60 mb-6">
-        Exact scoreline only — 1 point if you call it exactly right. Locks 1
-        hour before kickoff.
+      <p className="text-xs bg-red text-chalk p-2 rounded mb-4">
+        DEBUG session.user.id = {session.user.id} | matches found with
+        predictions:{" "}
+        {matches.filter((m) => m.groupPredictions.length > 0).length}
       </p>
 
       <MatchTabs
