@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import SignOutForm from "./SignOutForm";
-import MobileNavToggle from "./MobileNavToggle";
+import SignOutForm from "@/components/SignOutForm";
+import MobileNavToggle from "@/components/MobileNavToggle";
 
 type NavUser = {
   name?: string | null;
@@ -17,15 +17,17 @@ const LINKS = [
 ];
 
 export default function NavBar({ user }: { user: NavUser }) {
-  const navLinks = LINKS.map((link) => (
-    <Link
-      key={link.href}
-      href={link.href}
-      className="hover:text-amber transition-colors py-2.5 md:py-0"
-    >
-      {link.label}
-    </Link>
-  ));
+  const navLinks = (onNavigate?: () => void) =>
+    LINKS.map((link) => (
+      <Link
+        key={link.href}
+        href={link.href}
+        onClick={onNavigate}
+        className="hover:text-amber transition-colors py-2.5 md:py-0"
+      >
+        {link.label}
+      </Link>
+    ));
 
   const authArea = user ? (
     <div className="flex items-center gap-3">
@@ -65,18 +67,18 @@ export default function NavBar({ user }: { user: NavUser }) {
         <MobileNavToggle
           desktopNav={
             <>
-              {navLinks}
+              {navLinks()}
               <div className="ml-2">{authArea}</div>
             </>
           }
-          mobileNav={
+          mobileNav={(closeMenu) => (
             <>
-              {navLinks}
+              {navLinks(closeMenu)}
               <div className="pt-2 mt-1 border-t border-chalk/15">
                 {authArea}
               </div>
             </>
-          }
+          )}
         />
       </div>
     </header>

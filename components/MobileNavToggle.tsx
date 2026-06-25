@@ -7,7 +7,7 @@ export default function MobileNavToggle({
   mobileNav,
 }: {
   desktopNav: ReactNode;
-  mobileNav: ReactNode;
+  mobileNav: (closeMenu: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -40,11 +40,8 @@ export default function MobileNavToggle({
       </button>
 
       {open && (
-        <nav
-          className="md:hidden absolute left-0 right-0 top-full border-t border-chalk/15 bg-pitch px-4 py-3 flex flex-col gap-1 text-sm font-medium z-50"
-          onClick={() => setOpen(false)}
-        >
-          {mobileNav}
+        <nav className="md:hidden absolute left-0 right-0 top-full border-t border-chalk/15 bg-pitch px-4 py-3 flex flex-col gap-1 text-sm font-medium z-50">
+          {mobileNav(() => setOpen(false))}
         </nav>
       )}
     </>
