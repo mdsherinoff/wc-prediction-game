@@ -233,7 +233,7 @@ function TeamPanel({
         className="text-[11px] tracking-wide mb-1"
         style={{ color: "var(--board-text-muted)" }}
       >
-        LAST 3 RESULTS
+        LAST 3 RESULTS THIS TOURNAMENT
       </div>
       {form.length === 0 ? (
         <p className="text-xs" style={{ color: "var(--board-digit-dim)" }}>
