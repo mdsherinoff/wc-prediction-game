@@ -16,8 +16,8 @@ type Match = {
 };
 
 type Prediction = {
-  homeScore: number;
-  awayScore: number;
+  homeScore: number | null;
+  awayScore: number | null;
   pointsAwarded: number | null;
 } | null;
 
@@ -29,18 +29,31 @@ export default function GroupMatchCard({
   existingPrediction: Prediction;
 }) {
   const [home, setHome] = useState<string>(
-    existingPrediction ? String(existingPrediction.homeScore) : "",
+    existingPrediction?.homeScore != null
+      ? String(existingPrediction.homeScore)
+      : "",
   );
   const [away, setAway] = useState<string>(
-    existingPrediction ? String(existingPrediction.awayScore) : "",
+    existingPrediction?.awayScore != null
+      ? String(existingPrediction.awayScore)
+      : "",
   );
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setHome(existingPrediction ? String(existingPrediction.homeScore) : "");
-    setAway(existingPrediction ? String(existingPrediction.awayScore) : "");
+    setHome(
+      existingPrediction?.homeScore != null
+        ? String(existingPrediction.homeScore)
+        : "",
+    );
+    setAway(
+      existingPrediction?.awayScore != null
+        ? String(existingPrediction.awayScore)
+        : "",
+    );
   }, [existingPrediction?.homeScore, existingPrediction?.awayScore]);
 
   const kickoffDate = new Date(match.kickoff);

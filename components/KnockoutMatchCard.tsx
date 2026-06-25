@@ -17,7 +17,7 @@ type Match = {
 };
 
 type Prediction = {
-  predictedWinner: string;
+  predictedWinner: string | null;
   homeScore: number | null;
   awayScore: number | null;
   pointsAwarded: number | null;
