@@ -71,6 +71,51 @@ function RankedNameTick({
   );
 }
 
+// Renders a value centered inside its own bar segment, but only if the
+// segment is wide enough for the text to actually fit — narrow slivers
+// (e.g. 1 point next to a 40-point segment) render no label rather than
+// an overflowing or clipped number.
+function SegmentLabel({
+  x,
+  y,
+  width,
+  height,
+  value,
+}: {
+  x?: string | number;
+  y?: string | number;
+  width?: string | number;
+  height?: string | number;
+  value?: string | number | boolean | null;
+}) {
+  const nx = Number(x);
+  const ny = Number(y);
+  const nw = Number(width);
+  const nh = Number(height);
+  if ([nx, ny, nw, nh].some((n) => Number.isNaN(n))) return null;
+  if (typeof value !== "number" || value <= 0) return null;
+  // Rough minimum width for a 2-digit label at this font size — below
+  // this, skip the label rather than render something illegible/clipped.
+  const MIN_WIDTH_FOR_LABEL = 22;
+  if (nw < MIN_WIDTH_FOR_LABEL) return null;
+
+  return (
+    <text
+      x={nx + nw / 2}
+      y={ny + nh / 2}
+      dy={4}
+      textAnchor="middle"
+      fontSize={11}
+      fontWeight={700}
+      fill="#f5f3ec"
+      fontFamily="'Barlow Condensed', sans-serif"
+    >
+      {value}
+    </text>
+  );
+}
+
+// Headline total, anchored just past the end of the full stacked bar.
 function TotalLabel({
   x,
   y,
@@ -96,7 +141,7 @@ function TotalLabel({
 
   return (
     <text
-      x={nx + nw + 8}
+      x={nx + nw + 10}
       y={ny + nh / 2}
       dy={4}
       fontSize={15}
@@ -106,6 +151,102 @@ function TotalLabel({
     >
       {value}
     </text>
+  );
+}
+
+// Label for the zero-point placeholder track — writes "0 pt" directly on
+// the muted background, but only for rows whose real total is zero (it's
+// wired to fire on every row, so it self-filters here).
+function ZeroLabel({
+  x,
+  y,
+  height,
+  value,
+}: {
+  x?: string | number;
+  y?: string | number;
+  height?: string | number;
+  value?: string | number | boolean | null;
+}) {
+  if (typeof value === "number" && value > 0) return null;
+
+  const nx = Number(x);
+  const ny = Number(y);
+  const nh = Number(height);
+  if ([nx, ny, nh].some((n) => Number.isNaN(n))) return null;
+
+  return (
+    <text
+      x={nx + 10}
+      y={ny + nh / 2}
+      dy={4}
+      fontSize={12}
+      fontWeight={700}
+      fill="rgba(19,38,31,0.35)"
+      fontFamily="'Barlow Condensed', sans-serif"
+    >
+      0 pt
+    </text>
+  );
+}
+
+// Custom tooltip, styled with the app's fonts/colors instead of Recharts'
+// default white box. Reads straight off `payload`, so it only ever shows
+// the real SERIES entries — there's no separate placeholder series to
+// accidentally leak in anymore (the empty-row track is a Bar `background`,
+// which never appears in tooltip payloads).
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { dataKey?: string; value?: number; color?: string }[];
+  label?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
+
+  return (
+    <div
+      className="rounded-lg px-3.5 py-3 min-w-[150px]"
+      style={{
+        background: "#13261f",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+      }}
+    >
+      <div className="font-display font-700 text-[13px] text-chalk mb-1.5">
+        {label}
+      </div>
+      {SERIES.map((s) => {
+        const entry = payload.find((p) => p.dataKey === s.key);
+        return (
+          <div
+            key={s.key}
+            className="flex items-center justify-between gap-4 text-xs py-0.5"
+            style={{ color: "rgba(245,243,236,0.55)" }}
+          >
+            <span>{s.label}</span>
+            <span className="font-semibold text-chalk">
+              {entry?.value ?? 0}
+            </span>
+          </div>
+        );
+      })}
+      <div
+        className="flex items-center justify-between gap-4 text-xs pt-1.5 mt-1"
+        style={{
+          borderTop: "1px solid rgba(245,243,236,0.15)",
+          color: "rgba(245,243,236,0.55)",
+        }}
+      >
+        <span>Total</span>
+        <span className="font-bold" style={{ color: "#e8a33d" }}>
+          {total}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -127,24 +268,13 @@ export default function LeaderboardBarChart({
   const rankByName = new Map(top.map((d, i) => [d.name, i + 1]));
 
   const maxTotal = Math.max(...top.map(totalOf), 1);
-  // Width of the muted placeholder bar for zero-point rows — a small,
-  // fixed fraction of the domain so it reads as "no points yet" rather
-  // than a real (misleadingly large) value.
-  const maxTotalFloor = maxTotal * 0.04;
 
   // Reverse for display only, so rank #1 renders at the top of the chart
   // (Recharts vertical-layout bars draw top-to-bottom in array order).
-  // `floor` gives zero-point rows a thin muted placeholder bar instead of
-  // rendering nothing, so an empty row reads as "no points yet" rather
-  // than looking like a broken/missing bar.
-  const chartData = [...top].reverse().map((d) => {
-    const total = totalOf(d);
-    return {
-      ...d,
-      total,
-      floor: total === 0 ? maxTotalFloor : 0,
-    };
-  });
+  const chartData = [...top].reverse().map((d) => ({
+    ...d,
+    total: totalOf(d),
+  }));
 
   return (
     <div>
@@ -193,25 +323,8 @@ export default function LeaderboardBarChart({
             />
             <Tooltip
               cursor={{ fill: "rgba(11,61,46,0.04)" }}
-              contentStyle={{
-                fontSize: 13,
-                borderRadius: 8,
-                border: "1px solid #d8d3c3",
-              }}
+              content={<ChartTooltip />}
             />
-            {/* Muted placeholder for zero-point rows — keeps the row from
-                rendering as an empty gap that looks broken. */}
-            <Bar
-              dataKey="floor"
-              stackId="pts"
-              name="No points yet"
-              fill="#e4e0d2"
-              barSize={22}
-              radius={[6, 6, 6, 6]}
-              legendType="none"
-            >
-              <LabelList dataKey="total" content={TotalLabel} />
-            </Bar>
             {SERIES.map((s, i) => (
               <Bar
                 key={s.key}
@@ -219,7 +332,7 @@ export default function LeaderboardBarChart({
                 stackId="pts"
                 name={s.label}
                 fill={s.color}
-                barSize={22}
+                barSize={26}
                 radius={
                   i === SERIES.length - 1
                     ? [0, 6, 6, 0]
@@ -227,10 +340,18 @@ export default function LeaderboardBarChart({
                       ? [6, 0, 0, 6]
                       : undefined
                 }
+                // Full-width muted track behind every bar — only needs to
+                // be declared once, on the first series, since Recharts
+                // draws one shared background per category row.
+                background={
+                  i === 0 ? { fill: "#e4e0d2", radius: 6 } : undefined
+                }
               >
+                <LabelList dataKey={s.key} content={SegmentLabel} />
                 {i === SERIES.length - 1 && (
                   <LabelList dataKey="total" content={TotalLabel} />
                 )}
+                {i === 0 && <LabelList dataKey="total" content={ZeroLabel} />}
               </Bar>
             ))}
           </BarChart>
