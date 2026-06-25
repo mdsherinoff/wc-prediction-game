@@ -6,6 +6,8 @@ const nextConfig = {
       { hostname: "lh3.googleusercontent.com" },
     ],
   },
+  
+  serverExternalPackages: ["@react-pdf/renderer"],
 };
 
 module.exports = nextConfig;

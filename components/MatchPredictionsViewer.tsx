@@ -88,9 +88,17 @@ export default function MatchPredictionsViewer({
 
       {data && (
         <div>
-          <h2 className="font-display text-lg font-700 text-pitch mb-1">
-            {data.homeTeamName} vs {data.awayTeamName}
-          </h2>
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
+            <h2 className="font-display text-lg font-700 text-pitch">
+              {data.homeTeamName} vs {data.awayTeamName}
+            </h2>
+            <a
+              href={`/api/admin/match-predictions/pdf?matchId=${matchId}`}
+              className="text-xs bg-pitch text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110"
+            >
+              Download PDF
+            </a>
+          </div>
           <p className="text-xs text-ink/50 mb-4">
             {data.predictions.length} prediction
             {data.predictions.length === 1 ? "" : "s"}, most recently updated
