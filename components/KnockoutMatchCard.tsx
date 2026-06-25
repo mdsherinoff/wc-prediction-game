@@ -68,7 +68,7 @@ export default function KnockoutMatchCard({
 
   const kickoffDate = new Date(match.kickoff);
   const lockTime = useMemo(
-    () => new Date(kickoffDate.getTime() - 60 * 60 * 1000),
+    () => new Date(kickoffDate.getTime() - 1 * 60 * 1000),
     [match.kickoff],
   );
   const [locked, setLocked] = useState(match.status !== "SCHEDULED");
