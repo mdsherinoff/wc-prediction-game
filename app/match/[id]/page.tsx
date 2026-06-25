@@ -77,17 +77,21 @@ export default async function MatchDetailPage({
     <div className="max-w-2xl mx-auto px-4 py-8">
       <Link
         href="/groups"
-        className="text-sm text-turf underline mb-4 inline-block"
+        className="text-sm text-[var(--amber)] hover:underline mb-4 inline-block"
       >
         ← Back
       </Link>
 
-      <div className="text-xs text-ink/50 mb-1">
-        {stageLabel(match.stage)}{" "}
-        {match.groupName ? `· Group ${match.groupName}` : ""}
+      <div
+        className="text-[11px] tracking-wide mb-1"
+        style={{ color: "var(--board-text-muted)" }}
+      >
+        {stageLabel(match.stage).toUpperCase()}{" "}
+        {match.groupName ? `· GROUP ${match.groupName}` : ""}
       </div>
-      <h1 className="font-display text-2xl font-700 text-pitch mb-6">
-        {match.homeTeam?.name ?? "TBD"} vs {match.awayTeam?.name ?? "TBD"}
+      <h1 className="font-display text-2xl font-bold tracking-wide text-[var(--ink)] mb-6">
+        {match.homeTeam?.name?.toUpperCase() ?? "TBD"} VS{" "}
+        {match.awayTeam?.name?.toUpperCase() ?? "TBD"}
       </h1>
 
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
@@ -96,19 +100,27 @@ export default async function MatchDetailPage({
       </div>
 
       {match.status === "FINISHED" && (
-        <div className="ticket p-4 mb-8 text-center">
-          <div className="text-xs text-ink/50 mb-1">Final score</div>
-          <div className="font-display text-3xl font-700 text-pitch">
+        <div className="scoreboard-card p-4 mb-8 text-center">
+          <div
+            className="text-[11px] tracking-wide mb-1"
+            style={{ color: "var(--board-text-muted)" }}
+          >
+            FINAL SCORE
+          </div>
+          <div className="font-display text-3xl font-bold text-[var(--amber)]">
             {match.homeScore} – {match.awayScore}
           </div>
         </div>
       )}
 
-      <h2 className="font-display text-lg font-700 text-turf mb-3">
+      <h2 className="font-display text-lg font-bold tracking-wide text-[var(--pitch)] mb-3">
         Everyone&apos;s predictions
       </h2>
       {!predictionsRevealed ? (
-        <p className="text-sm text-ink/40 ticket p-4 text-center">
+        <p
+          className="text-sm scoreboard-card p-4 text-center"
+          style={{ color: "var(--board-text-muted)" }}
+        >
           Predictions are hidden until 1 hour before kickoff.
         </p>
       ) : (
@@ -117,10 +129,10 @@ export default async function MatchDetailPage({
             ? match.groupPredictions.map((p) => (
                 <div
                   key={p.id}
-                  className="ticket px-4 py-2 flex items-center justify-between text-sm"
+                  className="scoreboard-card px-4 py-2 flex items-center justify-between text-sm"
                 >
-                  <span>{p.user.name}</span>
-                  <span className="font-display font-700">
+                  <span className="text-[var(--chalk)]">{p.user.name}</span>
+                  <span className="font-display font-bold text-[var(--amber)]">
                     {p.homeScore} – {p.awayScore}
                   </span>
                 </div>
@@ -128,15 +140,18 @@ export default async function MatchDetailPage({
             : match.knockoutPredictions.map((p) => (
                 <div
                   key={p.id}
-                  className="ticket px-4 py-2 flex items-center justify-between text-sm"
+                  className="scoreboard-card px-4 py-2 flex items-center justify-between text-sm"
                 >
-                  <span>{p.user.name}</span>
-                  <span className="font-display font-700">
+                  <span className="text-[var(--chalk)]">{p.user.name}</span>
+                  <span className="font-display font-bold text-[var(--amber)]">
                     {p.predictedWinner === match.homeTeamId
                       ? match.homeTeam?.name
                       : match.awayTeam?.name}
                     {p.homeScore != null && p.awayScore != null && (
-                      <span className="text-ink/40 ml-2">
+                      <span
+                        style={{ color: "var(--board-text-muted)" }}
+                        className="ml-2"
+                      >
                         ({p.homeScore}-{p.awayScore})
                       </span>
                     )}
@@ -178,12 +193,17 @@ function TeamPanel({
 }) {
   if (!team) {
     return (
-      <div className="ticket p-4 text-center text-ink/40 text-sm">TBD</div>
+      <div
+        className="scoreboard-card p-4 text-center text-sm"
+        style={{ color: "var(--board-text-muted)" }}
+      >
+        TBD
+      </div>
     );
   }
 
   return (
-    <div className="ticket p-4">
+    <div className="scoreboard-card p-4">
       <div className="flex items-center gap-3 mb-3">
         {team.flagUrl && (
           <Image
@@ -195,27 +215,39 @@ function TeamPanel({
           />
         )}
         <div>
-          <div className="font-semibold text-ink">{team.name}</div>
+          <div className="font-display font-bold tracking-wide text-[var(--chalk)]">
+            {team.name.toUpperCase()}
+          </div>
           {team.fifaRanking != null && (
-            <div className="text-xs text-ink/50">
-              FIFA Rank #{team.fifaRanking}
+            <div
+              className="text-[11px]"
+              style={{ color: "var(--board-text-muted)" }}
+            >
+              FIFA RANK #{team.fifaRanking}
             </div>
           )}
         </div>
       </div>
 
-      <div className="text-xs text-ink/50 mb-1">Last 3 results</div>
+      <div
+        className="text-[11px] tracking-wide mb-1"
+        style={{ color: "var(--board-text-muted)" }}
+      >
+        LAST 3 RESULTS
+      </div>
       {form.length === 0 ? (
-        <p className="text-xs text-ink/30">
+        <p className="text-xs" style={{ color: "var(--board-digit-dim)" }}>
           No completed matches yet this tournament.
         </p>
       ) : (
         <div className="space-y-1">
           {form.map((f, i) => (
             <div key={i} className="flex items-center justify-between text-xs">
-              <span className="text-ink/70">vs {f.opponentName}</span>
+              <span className="text-[var(--chalk)]">
+                vs {f.opponentName.toUpperCase()}
+              </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-ink/50">
+                <span style={{ color: "var(--board-text-muted)" }}>
                   {f.ownScore}-{f.oppScore}
                 </span>
                 <span
