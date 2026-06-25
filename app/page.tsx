@@ -161,7 +161,7 @@ export default async function HomePage() {
         <RuleCard
           step="01"
           title="Group stage"
-          body="Predict the exact scoreline for every group match. Nail it exactly and you score 1 point. Locks 1 hour before kickoff."
+          body="Predict the exact scoreline for every group match. Nail it exactly and you score 1 point. Locks 1 minute before kickoff."
         />
         <RuleCard
           step="02"

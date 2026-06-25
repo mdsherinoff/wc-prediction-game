@@ -135,7 +135,7 @@ export default async function KnockoutsPage() {
       </div>
       <p className="text-sm text-ink/60 mb-6">
         Pick the winner for 1 point, plus 2 bonus points if you also call the
-        exact score. Locks 1 hour before kickoff.
+        exact score. Locks 1 minute before kickoff.
       </p>
 
       <MatchTabs

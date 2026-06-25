@@ -114,8 +114,8 @@ export default async function GroupsPage() {
         Group stage predictions
       </h1>
       <p className="text-sm text-ink/60 mb-6">
-        Exact scoreline only — 1 point if you call it exactly right. Opens 16 hours before kickoff and Locks 1
-        hour before kickoff.
+        Exact scoreline only — 1 point if you call it exactly right. Opens 16
+        hours before kickoff and Locks 1 minute before kickoff.
       </p>
 
       <MatchTabs
