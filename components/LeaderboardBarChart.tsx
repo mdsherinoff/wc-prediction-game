@@ -37,14 +37,17 @@ function RankedNameTick({
   payload,
   rankByName,
 }: {
-  x: number;
-  y: number;
-  payload: { value: string };
+  x?: string | number;
+  y?: string | number;
+  payload?: { value: string };
   rankByName: Map<string, number>;
 }) {
+  const nx = Number(x) || 0;
+  const ny = Number(y) || 0;
+  if (!payload) return null;
   const rank = rankByName.get(payload.value);
   return (
-    <g transform={`translate(${x},${y})`}>
+    <g transform={`translate(${nx},${ny})`}>
       <text
         x={0}
         y={0}
@@ -75,17 +78,22 @@ function TotalLabel({
   height,
   value,
 }: {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  value?: number;
+  x?: string | number;
+  y?: string | number;
+  width?: string | number;
+  height?: string | number;
+  value?: string | number | boolean | null;
 }) {
-  if (x == null || y == null || width == null || height == null) return null;
+  const nx = Number(x);
+  const ny = Number(y);
+  const nw = Number(width);
+  const nh = Number(height);
+  if ([nx, ny, nw, nh].some((n) => Number.isNaN(n))) return null;
+
   return (
     <text
-      x={x + width + 8}
-      y={y + height / 2}
+      x={nx + nw + 8}
+      y={ny + nh / 2}
       dy={4}
       fontSize={15}
       fontWeight={700}
@@ -164,8 +172,7 @@ export default function LeaderboardBarChart({
               width={120}
               tickLine={false}
               axisLine={false}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              tick={(props: any) => (
+              tick={(props) => (
                 <RankedNameTick {...props} rankByName={rankByName} />
               )}
             />
