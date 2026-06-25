@@ -2,14 +2,14 @@ import { requireAdmin } from "@/lib/admin";
 import { redirect } from "next/navigation";
 import { getReportsData } from "@/lib/reports";
 import LeaderboardBarChart from "@/components/LeaderboardBarChart";
-import PercentBarChart from "@/components/PercentBarChart";
+import RadialPercentChart from "@/components/RadialPercentChart";
 
 export default async function AdminReportsPage() {
   const session = await requireAdmin();
   if (!session) {
     redirect("/login");
   }
-  
+
   const data = await getReportsData();
 
   return (
@@ -33,7 +33,7 @@ export default async function AdminReportsPage() {
 
       <section className="mb-6">
         <div className="ticket p-5">
-          <PercentBarChart
+          <RadialPercentChart
             data={data.accuracy}
             dataKey="accuracyPct"
             color="#1f6e4a"
@@ -45,7 +45,7 @@ export default async function AdminReportsPage() {
 
       <section className="mb-10">
         <div className="ticket p-5">
-          <PercentBarChart
+          <RadialPercentChart
             data={data.participation}
             dataKey="participationPct"
             color="#e8a33d"

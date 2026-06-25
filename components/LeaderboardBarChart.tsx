@@ -6,8 +6,8 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  LabelList,
   ResponsiveContainer,
-  CartesianGrid,
 } from "recharts";
 import type { LeaderboardBarDatum } from "@/lib/reports";
 
@@ -17,6 +17,85 @@ const SERIES = [
   { key: "bracketPoints", label: "Bracket", color: "#0b3d2e" },
   { key: "adjustmentPoints", label: "Adjustments", color: "#c4453a" },
 ] as const;
+
+const TOP_N = 5;
+
+function totalOf(d: LeaderboardBarDatum) {
+  return (
+    (d.groupPoints ?? 0) +
+    (d.knockoutPoints ?? 0) +
+    (d.bracketPoints ?? 0) +
+    (d.adjustmentPoints ?? 0)
+  );
+}
+
+// Custom tick renders "#1  Jamie M." instead of just the name, so rank
+// reads directly off the axis without a separate disconnected list.
+function RankedNameTick({
+  x,
+  y,
+  payload,
+  rankByName,
+}: {
+  x: number;
+  y: number;
+  payload: { value: string };
+  rankByName: Map<string, number>;
+}) {
+  const rank = rankByName.get(payload.value);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={4}
+        textAnchor="end"
+        fontSize={13}
+        fontFamily="Inter, sans-serif"
+      >
+        <tspan
+          fill="#e8a33d"
+          fontWeight={700}
+          fontFamily="'DSEG7 Classic', 'Barlow Condensed', monospace"
+        >
+          {rank}{" "}
+        </tspan>
+        <tspan fill="#13261f" fontWeight={500}>
+          {payload.value}
+        </tspan>
+      </text>
+    </g>
+  );
+}
+
+function TotalLabel({
+  x,
+  y,
+  width,
+  height,
+  value,
+}: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  value?: number;
+}) {
+  if (x == null || y == null || width == null || height == null) return null;
+  return (
+    <text
+      x={x + width + 8}
+      y={y + height / 2}
+      dy={4}
+      fontSize={15}
+      fontWeight={700}
+      fill="#0b3d2e"
+      fontFamily="'Barlow Condensed', sans-serif"
+    >
+      {value}
+    </text>
+  );
+}
 
 export default function LeaderboardBarChart({
   data,
@@ -31,6 +110,19 @@ export default function LeaderboardBarChart({
     );
   }
 
+  const ranked = [...data].sort((a, b) => totalOf(b) - totalOf(a));
+  const top = ranked.slice(0, TOP_N);
+  const rankByName = new Map(top.map((d, i) => [d.name, i + 1]));
+
+  // Reverse for display only, so rank #1 renders at the top of the chart
+  // (Recharts vertical-layout bars draw top-to-bottom in array order).
+  const chartData = [...top].reverse().map((d) => ({
+    ...d,
+    total: totalOf(d),
+  }));
+
+  const maxTotal = Math.max(...top.map(totalOf), 1);
+
   return (
     <div>
       <div className="flex items-baseline gap-2.5 flex-wrap mb-3.5">
@@ -38,7 +130,7 @@ export default function LeaderboardBarChart({
           LEADERBOARD
         </span>
         <span className="text-[11px] tracking-wide text-ink/45">
-          POINTS BY SOURCE
+          TOP {TOP_N} · POINTS BY SOURCE
         </span>
       </div>
 
@@ -57,30 +149,28 @@ export default function LeaderboardBarChart({
         ))}
       </div>
 
-      <div className="w-full h-80">
+      <div className="w-full" style={{ height: chartData.length * 56 + 20 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
-            margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+            data={chartData}
+            layout="vertical"
+            barCategoryGap={18}
+            margin={{ top: 4, right: 44, left: 4, bottom: 4 }}
           >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#d8d3c3"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="name"
-              tick={{ fontSize: 12, fill: "#13261f" }}
-              interval={0}
-              angle={-30}
-              textAnchor="end"
-              height={60}
-            />
+            <XAxis type="number" hide domain={[0, maxTotal]} />
             <YAxis
-              tick={{ fontSize: 12, fill: "#13261f" }}
-              allowDecimals={false}
+              type="category"
+              dataKey="name"
+              width={120}
+              tickLine={false}
+              axisLine={false}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              tick={(props: any) => (
+                <RankedNameTick {...props} rankByName={rankByName} />
+              )}
             />
             <Tooltip
+              cursor={{ fill: "rgba(11,61,46,0.04)" }}
               contentStyle={{
                 fontSize: 13,
                 borderRadius: 8,
@@ -94,8 +184,19 @@ export default function LeaderboardBarChart({
                 stackId="pts"
                 name={s.label}
                 fill={s.color}
-                radius={i === SERIES.length - 1 ? [4, 4, 0, 0] : undefined}
-              />
+                barSize={22}
+                radius={
+                  i === SERIES.length - 1
+                    ? [0, 6, 6, 0]
+                    : i === 0
+                      ? [6, 0, 0, 6]
+                      : undefined
+                }
+              >
+                {i === SERIES.length - 1 && (
+                  <LabelList dataKey="total" content={TotalLabel} />
+                )}
+              </Bar>
             ))}
           </BarChart>
         </ResponsiveContainer>
