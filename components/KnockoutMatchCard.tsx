@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 
 type Team = { id: string; name: string } | null;
 
@@ -82,6 +83,21 @@ export default function KnockoutMatchCard({
   const notYetOpen = now < openTime && match.status === "SCHEDULED";
   const teamsKnown = !!match.homeTeam && !!match.awayTeam;
 
+  const [kickoffLabel, setKickoffLabel] = useState("");
+  useEffect(() => {
+    setKickoffLabel(
+      kickoffDate
+        .toLocaleString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+        .toUpperCase(),
+    );
+  }, [match.kickoff]);
+
   async function save() {
     setError(null);
     if (!winner) {
@@ -114,21 +130,6 @@ export default function KnockoutMatchCard({
       setSaving(false);
     }
   }
-
-  const [kickoffLabel, setKickoffLabel] = useState("");
-  useEffect(() => {
-    setKickoffLabel(
-      kickoffDate
-        .toLocaleString(undefined, {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })
-        .toUpperCase(),
-    );
-  }, [match.kickoff]);
 
   if (!teamsKnown) {
     return (
@@ -186,18 +187,26 @@ export default function KnockoutMatchCard({
 
       <div className="flex items-center gap-2 flex-wrap">
         {[match.homeTeam, match.awayTeam].map((team) => (
-          <button
-            key={team!.id}
-            disabled={disabled}
-            onClick={() => setWinner(team!.id)}
-            className={`flex-1 min-w-[120px] font-display text-sm font-bold tracking-wide px-3 py-2 rounded border transition ${
-              winner === team!.id
-                ? "bg-[var(--amber)] text-[var(--ink)] border-[var(--amber)]"
-                : "bg-transparent text-[var(--chalk)] border-[var(--board-divider)] hover:border-[var(--amber)]"
-            } disabled:opacity-60 disabled:cursor-not-allowed`}
-          >
-            {team!.name.toUpperCase()}
-          </button>
+          <div key={team!.id} className="flex-1 min-w-[120px]">
+            <Link
+              href={`/match/${match.id}`}
+              className="block mb-1 font-display text-sm font-bold text-[var(--chalk)] hover:text-[var(--amber)] transition"
+            >
+              {team!.name.toUpperCase()}
+            </Link>
+
+            <button
+              disabled={disabled}
+              onClick={() => setWinner(team!.id)}
+              className={`w-full px-3 py-2 rounded border transition ${
+                winner === team!.id
+                  ? "bg-[var(--amber)] text-[var(--ink)] border-[var(--amber)]"
+                  : "bg-transparent text-[var(--chalk)] border-[var(--board-divider)] hover:border-[var(--amber)]"
+              } disabled:opacity-60 disabled:cursor-not-allowed`}
+            >
+              PICK WINNER
+            </button>
+          </div>
         ))}
       </div>
 

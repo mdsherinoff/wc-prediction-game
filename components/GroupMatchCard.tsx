@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 
 type Team = { name: string; flagUrl: string | null } | null;
 
@@ -146,11 +147,16 @@ export default function GroupMatchCard({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
-          <span className="font-display font-bold text-lg tracking-wide text-[var(--chalk)] truncate">
-            {match.homeTeam?.name?.toUpperCase() ?? "TBD"}
-          </span>
+          <Link href={`/match/${match.id}`} className="block min-w-0">
+            <span className="font-display font-bold text-lg tracking-wide text-[var(--chalk)] truncate hover:text-[var(--amber)] transition">
+              {match.homeTeam?.name?.toUpperCase() ?? "TBD"}
+            </span>
+          </Link>
+
           <div
-            className={`digit-box w-10 h-9 text-2xl flex items-center justify-center shrink-0 ${disabled ? "dim" : ""}`}
+            className={`digit-box w-10 h-9 text-2xl flex items-center justify-center shrink-0 ${
+              disabled ? "dim" : ""
+            }`}
           >
             <input
               type="number"
@@ -166,11 +172,16 @@ export default function GroupMatchCard({
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <span className="font-display font-bold text-lg tracking-wide text-[var(--chalk)] truncate">
-            {match.awayTeam?.name?.toUpperCase() ?? "TBD"}
-          </span>
+          <Link href={`/match/${match.id}`} className="block min-w-0">
+            <span className="font-display font-bold text-lg tracking-wide text-[var(--chalk)] truncate hover:text-[var(--amber)] transition">
+              {match.awayTeam?.name?.toUpperCase() ?? "TBD"}
+            </span>
+          </Link>
+
           <div
-            className={`digit-box w-10 h-9 text-2xl flex items-center justify-center shrink-0 ${disabled ? "dim" : ""}`}
+            className={`digit-box w-10 h-9 text-2xl flex items-center justify-center shrink-0 ${
+              disabled ? "dim" : ""
+            }`}
           >
             <input
               type="number"

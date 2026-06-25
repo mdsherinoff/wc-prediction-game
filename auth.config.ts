@@ -28,6 +28,7 @@ export const authConfig: NextAuthConfig = {
         nextUrl.pathname.startsWith("/groups") ||
         nextUrl.pathname.startsWith("/knockouts") ||
         nextUrl.pathname.startsWith("/results") ||
+        nextUrl.pathname.startsWith("/match") ||
         nextUrl.pathname.startsWith("/admin");
       if (isProtected && !isLoggedIn) {
         return Response.redirect(new URL("/login", nextUrl));

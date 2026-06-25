@@ -80,11 +80,12 @@ enum MatchStatus {
 }
 
 model Team {
-  id        String  @id @default(cuid())
-  name      String  @unique
-  fifaCode  String? @unique
-  flagUrl   String?
-  groupName String?
+  id          String  @id @default(cuid())
+  name        String  @unique
+  fifaCode    String? @unique
+  flagUrl     String?
+  groupName   String?
+  fifaRanking Int?    // manually entered, refreshed occasionally by admin
 
   homeMatches Match[] @relation("HomeTeam")
   awayMatches Match[] @relation("AwayTeam")
