@@ -1,6 +1,9 @@
+import Link from "next/link";
+
 type Team = { name: string; flagUrl?: string | null } | null;
 
 export default function ResultRow({
+  matchId,
   kickoff,
   homeTeam,
   awayTeam,
@@ -11,6 +14,7 @@ export default function ResultRow({
   penAwayScore,
   userPoints,
 }: {
+  matchId: string;
   kickoff: string;
   homeTeam: Team;
   awayTeam: Team;
@@ -38,11 +42,14 @@ export default function ResultRow({
         >
           {kickoffLabel}
         </div>
-        <div className="font-display font-bold text-base tracking-wide text-[var(--chalk)] truncate">
+        <Link
+          href={`/match/${matchId}`}
+          className="block font-display font-bold text-base tracking-wide text-[var(--chalk)] truncate hover:text-[var(--amber)] transition"
+        >
           {homeTeam?.name?.toUpperCase() ?? "TBD"}{" "}
           <span style={{ color: "var(--board-text-muted)" }}>VS</span>{" "}
           {awayTeam?.name?.toUpperCase() ?? "TBD"}
-        </div>
+        </Link>
       </div>
 
       <div className="flex items-center gap-3 shrink-0">

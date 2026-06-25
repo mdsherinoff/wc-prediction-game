@@ -31,7 +31,7 @@ export default async function ResultsPage() {
       groupPredictions: { where: { userId } },
       knockoutPredictions: { where: { userId } },
     },
-    orderBy: { kickoff: "asc" },
+    orderBy: { kickoff: "desc" },
   });
 
   if (finishedMatches.length === 0) {
@@ -89,6 +89,7 @@ export default async function ResultsPage() {
                   {matches.map((m) => (
                     <ResultRow
                       key={m.id}
+                      matchId={m.id}
                       kickoff={m.kickoff.toISOString()}
                       homeTeam={m.homeTeam}
                       awayTeam={m.awayTeam}
@@ -118,6 +119,7 @@ export default async function ResultsPage() {
                   {knockoutsByStage.get(stage)!.map((m) => (
                     <ResultRow
                       key={m.id}
+                      matchId={m.id}
                       kickoff={m.kickoff.toISOString()}
                       homeTeam={m.homeTeam}
                       awayTeam={m.awayTeam}

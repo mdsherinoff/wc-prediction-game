@@ -114,7 +114,9 @@ export default async function KnockoutsPage() {
   }
 
   const upcomingMatches = matches.filter((m) => m.status !== "FINISHED");
-  const completedMatches = matches.filter((m) => m.status === "FINISHED");
+  const completedMatches = matches
+    .filter((m) => m.status === "FINISHED")
+    .sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime());
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
