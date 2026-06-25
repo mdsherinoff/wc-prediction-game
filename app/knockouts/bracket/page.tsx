@@ -89,7 +89,7 @@ export default async function BracketPage() {
         {STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => {
           const stageMatches = byStage.get(stage)!;
           const firstKickoff = stageMatches[0].kickoff;
-          const lockTime = new Date(firstKickoff.getTime() - 60 * 60 * 1000);
+          const lockTime = new Date(firstKickoff.getTime() - 1 * 60 * 1000);
           const locked = new Date() >= lockTime;
 
           return (

@@ -1,7 +1,7 @@
 import { Match, MatchStatus, Stage } from "@prisma/client";
 
-/** A prediction locks 1 hour before kickoff. */
-export const LOCK_WINDOW_MS = 60 * 60 * 1000;
+/** A prediction locks 1 minute before kickoff. */
+export const LOCK_WINDOW_MS = 1 * 60 * 1000;
 
 /** Predictions only open 16 hours before kickoff, not before. */
 export const OPEN_WINDOW_MS = 16 * 60 * 60 * 1000;
