@@ -9,7 +9,7 @@ export default async function AdminReportsPage() {
   if (!session) {
     redirect("/login");
   }
-
+  
   const data = await getReportsData();
 
   return (
