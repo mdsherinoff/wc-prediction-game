@@ -37,11 +37,14 @@ export function roundLockTime(firstMatchKickoffInRound: Date): Date {
 
 /** Group stage scoring: exact scoreline correct = 1 point. Nothing for "right winner only". */
 export function scoreGroupPrediction(
-  predHome: number,
-  predAway: number,
+  predHome: number | null,
+  predAway: number | null,
   actualHome: number,
-  actualAway: number
+  actualAway: number,
+  knownIncorrect = false,
 ): number {
+  if (knownIncorrect) return 0;
+  if (predHome == null || predAway == null) return 0;
   return predHome === actualHome && predAway === actualAway ? 1 : 0;
 }
 
@@ -51,15 +54,25 @@ export function scoreGroupPrediction(
  * If the prediction didn't include a scoreline guess, only winner points apply.
  */
 export function scoreKnockoutPrediction(params: {
-  predictedWinnerTeamId: string;
+  predictedWinnerTeamId: string | null;
   predHome?: number | null;
   predAway?: number | null;
   actualWinnerTeamId: string;
   actualHome: number;
   actualAway: number;
+  knownIncorrect?: boolean;
 }): number {
-  const { predictedWinnerTeamId, predHome, predAway, actualWinnerTeamId, actualHome, actualAway } =
-    params;
+  const {
+    predictedWinnerTeamId,
+    predHome,
+    predAway,
+    actualWinnerTeamId,
+    actualHome,
+    actualAway,
+    knownIncorrect,
+  } = params;
+
+  if (knownIncorrect || !predictedWinnerTeamId) return 0;
 
   let points = 0;
   if (predictedWinnerTeamId === actualWinnerTeamId) {

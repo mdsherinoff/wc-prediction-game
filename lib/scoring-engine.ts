@@ -32,7 +32,8 @@ export async function scoreFinishedMatches() {
           p.homeScore,
           p.awayScore,
           match.homeScore,
-          match.awayScore
+          match.awayScore,
+          p.knownIncorrect,
         );
         await prisma.groupPrediction.update({
           where: { id: p.id },
@@ -55,6 +56,7 @@ export async function scoreFinishedMatches() {
           actualWinnerTeamId: match.winnerTeamId,
           actualHome: match.homeScore,
           actualAway: match.awayScore,
+          knownIncorrect: p.knownIncorrect,
         });
         await prisma.knockoutPrediction.update({
           where: { id: p.id },

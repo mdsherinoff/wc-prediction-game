@@ -24,6 +24,7 @@ export default function BackfillForm({
   const [homeScore, setHomeScore] = useState("");
   const [awayScore, setAwayScore] = useState("");
   const [winner, setWinner] = useState("");
+  const [knownIncorrect, setKnownIncorrect] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -47,6 +48,7 @@ export default function BackfillForm({
           homeScore: homeScore === "" ? null : parseInt(homeScore, 10),
           awayScore: awayScore === "" ? null : parseInt(awayScore, 10),
           predictedWinner: winner || null,
+          knownIncorrect,
         }),
       });
       const data = await res.json();
@@ -112,6 +114,7 @@ export default function BackfillForm({
             setHomeScore("");
             setAwayScore("");
             setWinner("");
+            setKnownIncorrect(false);
           }}
           className="w-full border border-line rounded px-2 py-2 text-sm"
         >
@@ -124,7 +127,25 @@ export default function BackfillForm({
         </select>
       </div>
 
-      {selectedMatch && isGroup && (
+      {selectedMatch && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setKnownIncorrect((v) => !v)}
+            className={`px-3 py-2 rounded border text-sm font-medium ${
+              knownIncorrect
+                ? "bg-red text-chalk border-red"
+                : "border-line text-ink/60"
+            }`}
+          >
+            {knownIncorrect
+              ? "✓ Marked as wrong prediction"
+              : "Mark as wrong prediction (exact guess unknown)"}
+          </button>
+        </div>
+      )}
+
+      {selectedMatch && isGroup && !knownIncorrect && (
         <div className="flex items-center gap-3">
           <div>
             <label className="text-xs text-ink/50 block mb-1">
@@ -154,7 +175,7 @@ export default function BackfillForm({
         </div>
       )}
 
-      {selectedMatch && !isGroup && (
+      {selectedMatch && !isGroup && !knownIncorrect && (
         <div className="space-y-3">
           <div>
             <label className="text-xs text-ink/50 block mb-1">

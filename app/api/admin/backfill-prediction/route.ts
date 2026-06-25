@@ -44,24 +44,38 @@ export async function POST(req: NextRequest) {
   }
 
   if (match.stage === "GROUP") {
-    if (
-      typeof homeScore !== "number" ||
-      typeof awayScore !== "number" ||
-      !Number.isInteger(homeScore) ||
-      !Number.isInteger(awayScore) ||
-      homeScore < 0 ||
-      awayScore < 0
-    ) {
+    const markedWrong = !!body.knownIncorrect;
+    const hasRealScore =
+      typeof homeScore === "number" &&
+      typeof awayScore === "number" &&
+      Number.isInteger(homeScore) &&
+      Number.isInteger(awayScore) &&
+      homeScore >= 0 &&
+      awayScore >= 0;
+
+    if (!markedWrong && !hasRealScore) {
       return NextResponse.json(
-        { error: "Group matches need a valid homeScore and awayScore" },
+        { error: "Provide a valid scoreline, or mark as a known-wrong guess" },
         { status: 400 },
       );
     }
 
     const prediction = await prisma.groupPrediction.upsert({
       where: { userId_matchId: { userId, matchId } },
-      update: { homeScore, awayScore, pointsAwarded: null, scoredAt: null },
-      create: { userId, matchId, homeScore, awayScore },
+      update: {
+        homeScore: hasRealScore ? homeScore : null,
+        awayScore: hasRealScore ? awayScore : null,
+        knownIncorrect: markedWrong,
+        pointsAwarded: null,
+        scoredAt: null,
+      },
+      create: {
+        userId,
+        matchId,
+        homeScore: hasRealScore ? homeScore : null,
+        awayScore: hasRealScore ? awayScore : null,
+        knownIncorrect: markedWrong,
+      },
     });
 
     // Re-score immediately in case the match is already finished
@@ -69,12 +83,18 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ prediction });
   } else {
+    const markedWrong = !!body.knownIncorrect;
+
     if (
-      !predictedWinner ||
-      ![match.homeTeamId, match.awayTeamId].includes(predictedWinner)
+      !markedWrong &&
+      (!predictedWinner ||
+        ![match.homeTeamId, match.awayTeamId].includes(predictedWinner))
     ) {
       return NextResponse.json(
-        { error: "predictedWinner must be one of the two teams in this match" },
+        {
+          error:
+            "predictedWinner must be one of the two teams in this match, or mark as known-wrong",
+        },
         { status: 400 },
       );
     }
@@ -90,18 +110,20 @@ export async function POST(req: NextRequest) {
     const prediction = await prisma.knockoutPrediction.upsert({
       where: { userId_matchId: { userId, matchId } },
       update: {
-        predictedWinner,
+        predictedWinner: markedWrong ? null : predictedWinner,
         homeScore: hasScoreGuess ? homeScore : null,
         awayScore: hasScoreGuess ? awayScore : null,
+        knownIncorrect: markedWrong,
         pointsAwarded: null,
         scoredAt: null,
       },
       create: {
         userId,
         matchId,
-        predictedWinner,
+        predictedWinner: markedWrong ? null : predictedWinner,
         homeScore: hasScoreGuess ? homeScore : null,
         awayScore: hasScoreGuess ? awayScore : null,
+        knownIncorrect: markedWrong,
       },
     });
 

@@ -127,13 +127,17 @@ model Match {
 }
 
 model GroupPrediction {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   matchId   String
-  homeScore Int
-  awayScore Int
+  homeScore Int?
+  awayScore Int?
 
-  pointsAwarded Int? // filled in once match finishes & is scored; null until then
+  // True if this was backfilled as "known to be a wrong guess" without
+  // recording the actual scoreline they guessed
+  knownIncorrect Boolean @default(false)
+
+  pointsAwarded Int?     // filled in once match finishes & is scored; null until then
   scoredAt      DateTime?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -146,12 +150,14 @@ model GroupPrediction {
 }
 
 model KnockoutPrediction {
-  id              String @id @default(cuid())
+  id              String  @id @default(cuid())
   userId          String
   matchId         String
-  predictedWinner String
-  homeScore       Int?
+  predictedWinner String? // Team id; null if we only know they got it wrong, not who they picked
+  homeScore       Int?    // optional exact-score guess (regulation/ET, not pens)
   awayScore       Int?
+
+  knownIncorrect Boolean @default(false)
 
   pointsAwarded Int?
   scoredAt      DateTime?
