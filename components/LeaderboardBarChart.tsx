@@ -89,6 +89,10 @@ function TotalLabel({
   const nw = Number(width);
   const nh = Number(height);
   if ([nx, ny, nw, nh].some((n) => Number.isNaN(n))) return null;
+  // A zero-width segment means this particular bar (floor or real) isn't
+  // the one actually drawn for this row — skip it so the other segment's
+  // label is the only one rendered, avoiding duplicate/overlapping totals.
+  if (nw === 0) return null;
 
   return (
     <text
@@ -122,14 +126,25 @@ export default function LeaderboardBarChart({
   const top = ranked.slice(0, TOP_N);
   const rankByName = new Map(top.map((d, i) => [d.name, i + 1]));
 
+  const maxTotal = Math.max(...top.map(totalOf), 1);
+  // Width of the muted placeholder bar for zero-point rows — a small,
+  // fixed fraction of the domain so it reads as "no points yet" rather
+  // than a real (misleadingly large) value.
+  const maxTotalFloor = maxTotal * 0.04;
+
   // Reverse for display only, so rank #1 renders at the top of the chart
   // (Recharts vertical-layout bars draw top-to-bottom in array order).
-  const chartData = [...top].reverse().map((d) => ({
-    ...d,
-    total: totalOf(d),
-  }));
-
-  const maxTotal = Math.max(...top.map(totalOf), 1);
+  // `floor` gives zero-point rows a thin muted placeholder bar instead of
+  // rendering nothing, so an empty row reads as "no points yet" rather
+  // than looking like a broken/missing bar.
+  const chartData = [...top].reverse().map((d) => {
+    const total = totalOf(d);
+    return {
+      ...d,
+      total,
+      floor: total === 0 ? maxTotalFloor : 0,
+    };
+  });
 
   return (
     <div>
@@ -169,7 +184,7 @@ export default function LeaderboardBarChart({
             <YAxis
               type="category"
               dataKey="name"
-              width={120}
+              width={150}
               tickLine={false}
               axisLine={false}
               tick={(props) => (
@@ -184,6 +199,19 @@ export default function LeaderboardBarChart({
                 border: "1px solid #d8d3c3",
               }}
             />
+            {/* Muted placeholder for zero-point rows — keeps the row from
+                rendering as an empty gap that looks broken. */}
+            <Bar
+              dataKey="floor"
+              stackId="pts"
+              name="No points yet"
+              fill="#e4e0d2"
+              barSize={22}
+              radius={[6, 6, 6, 6]}
+              legendType="none"
+            >
+              <LabelList dataKey="total" content={TotalLabel} />
+            </Bar>
             {SERIES.map((s, i) => (
               <Bar
                 key={s.key}
