@@ -89,11 +89,13 @@ export async function GET(req: NextRequest) {
     />,
   );
 
+  const pdfBytes = new Uint8Array(pdfBuffer);
+
   const safeFilename = `${homeTeamName}-vs-${awayTeamName}-predictions`
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-");
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBytes, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${safeFilename}.pdf"`,
