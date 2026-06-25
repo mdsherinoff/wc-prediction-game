@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  LabelList,
-  ResponsiveContainer,
-} from "recharts";
+import { useState } from "react";
 import type { LeaderboardBarDatum } from "@/lib/reports";
 
 const SERIES = [
@@ -19,6 +11,9 @@ const SERIES = [
 ] as const;
 
 const TOP_N = 5;
+// Minimum pixel width a segment needs before it's worth printing a number
+// inside it — narrower than this and the text would clip or overflow.
+const MIN_SEGMENT_WIDTH_PCT = 7;
 
 function totalOf(d: LeaderboardBarDatum) {
   return (
@@ -29,232 +24,13 @@ function totalOf(d: LeaderboardBarDatum) {
   );
 }
 
-// Custom tick renders "#1  Jamie M." instead of just the name, so rank
-// reads directly off the axis without a separate disconnected list.
-function RankedNameTick({
-  x,
-  y,
-  payload,
-  rankByName,
-}: {
-  x?: string | number;
-  y?: string | number;
-  payload?: { value: string };
-  rankByName: Map<string, number>;
-}) {
-  const nx = Number(x) || 0;
-  const ny = Number(y) || 0;
-  if (!payload) return null;
-  const rank = rankByName.get(payload.value);
-  return (
-    <g transform={`translate(${nx},${ny})`}>
-      <text
-        x={0}
-        y={0}
-        dy={4}
-        textAnchor="end"
-        fontSize={13}
-        fontFamily="Inter, sans-serif"
-      >
-        <tspan
-          fill="#e8a33d"
-          fontWeight={700}
-          fontFamily="'DSEG7 Classic', 'Barlow Condensed', monospace"
-        >
-          {rank}{" "}
-        </tspan>
-        <tspan fill="#13261f" fontWeight={500}>
-          {payload.value}
-        </tspan>
-      </text>
-    </g>
-  );
-}
-
-// Renders a value centered inside its own bar segment, but only if the
-// segment is wide enough for the text to actually fit — narrow slivers
-// (e.g. 1 point next to a 40-point segment) render no label rather than
-// an overflowing or clipped number.
-function SegmentLabel({
-  x,
-  y,
-  width,
-  height,
-  value,
-}: {
-  x?: string | number;
-  y?: string | number;
-  width?: string | number;
-  height?: string | number;
-  value?: string | number | boolean | null;
-}) {
-  const nx = Number(x);
-  const ny = Number(y);
-  const nw = Number(width);
-  const nh = Number(height);
-  if ([nx, ny, nw, nh].some((n) => Number.isNaN(n))) return null;
-  if (typeof value !== "number" || value <= 0) return null;
-  // Rough minimum width for a 2-digit label at this font size — below
-  // this, skip the label rather than render something illegible/clipped.
-  const MIN_WIDTH_FOR_LABEL = 22;
-  if (nw < MIN_WIDTH_FOR_LABEL) return null;
-
-  return (
-    <text
-      x={nx + nw / 2}
-      y={ny + nh / 2}
-      dy={4}
-      textAnchor="middle"
-      fontSize={11}
-      fontWeight={700}
-      fill="#f5f3ec"
-      fontFamily="'Barlow Condensed', sans-serif"
-    >
-      {value}
-    </text>
-  );
-}
-
-// Headline total, anchored just past the end of the full stacked bar.
-function TotalLabel({
-  x,
-  y,
-  width,
-  height,
-  value,
-}: {
-  x?: string | number;
-  y?: string | number;
-  width?: string | number;
-  height?: string | number;
-  value?: string | number | boolean | null;
-}) {
-  const nx = Number(x);
-  const ny = Number(y);
-  const nw = Number(width);
-  const nh = Number(height);
-  if ([nx, ny, nw, nh].some((n) => Number.isNaN(n))) return null;
-  // A zero-width segment means this particular bar (floor or real) isn't
-  // the one actually drawn for this row — skip it so the other segment's
-  // label is the only one rendered, avoiding duplicate/overlapping totals.
-  if (nw === 0) return null;
-
-  return (
-    <text
-      x={nx + nw + 10}
-      y={ny + nh / 2}
-      dy={4}
-      fontSize={15}
-      fontWeight={700}
-      fill="#0b3d2e"
-      fontFamily="'Barlow Condensed', sans-serif"
-    >
-      {value}
-    </text>
-  );
-}
-
-// Label for the zero-point placeholder track — writes "0 pt" directly on
-// the muted background, but only for rows whose real total is zero (it's
-// wired to fire on every row, so it self-filters here).
-function ZeroLabel({
-  x,
-  y,
-  height,
-  value,
-}: {
-  x?: string | number;
-  y?: string | number;
-  height?: string | number;
-  value?: string | number | boolean | null;
-}) {
-  if (typeof value === "number" && value > 0) return null;
-
-  const nx = Number(x);
-  const ny = Number(y);
-  const nh = Number(height);
-  if ([nx, ny, nh].some((n) => Number.isNaN(n))) return null;
-
-  return (
-    <text
-      x={nx + 10}
-      y={ny + nh / 2}
-      dy={4}
-      fontSize={12}
-      fontWeight={700}
-      fill="rgba(19,38,31,0.35)"
-      fontFamily="'Barlow Condensed', sans-serif"
-    >
-      0 pt
-    </text>
-  );
-}
-
-// Custom tooltip, styled with the app's fonts/colors instead of Recharts'
-// default white box. Reads straight off `payload`, so it only ever shows
-// the real SERIES entries — there's no separate placeholder series to
-// accidentally leak in anymore (the empty-row track is a Bar `background`,
-// which never appears in tooltip payloads).
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { dataKey?: string; value?: number; color?: string }[];
-  label?: string;
-}) {
-  if (!active || !payload || payload.length === 0) return null;
-
-  const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
-
-  return (
-    <div
-      className="rounded-lg px-3.5 py-3 min-w-[150px]"
-      style={{
-        background: "#13261f",
-        boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
-      }}
-    >
-      <div className="font-display font-700 text-[13px] text-chalk mb-1.5">
-        {label}
-      </div>
-      {SERIES.map((s) => {
-        const entry = payload.find((p) => p.dataKey === s.key);
-        return (
-          <div
-            key={s.key}
-            className="flex items-center justify-between gap-4 text-xs py-0.5"
-            style={{ color: "rgba(245,243,236,0.55)" }}
-          >
-            <span>{s.label}</span>
-            <span className="font-semibold text-chalk">
-              {entry?.value ?? 0}
-            </span>
-          </div>
-        );
-      })}
-      <div
-        className="flex items-center justify-between gap-4 text-xs pt-1.5 mt-1"
-        style={{
-          borderTop: "1px solid rgba(245,243,236,0.15)",
-          color: "rgba(245,243,236,0.55)",
-        }}
-      >
-        <span>Total</span>
-        <span className="font-bold" style={{ color: "#e8a33d" }}>
-          {total}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 export default function LeaderboardBarChart({
   data,
 }: {
   data: LeaderboardBarDatum[];
 }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
   if (data.length === 0) {
     return (
       <p className="text-sm text-ink/40 py-8 text-center">
@@ -263,22 +39,19 @@ export default function LeaderboardBarChart({
     );
   }
 
-  const ranked = [...data].sort((a, b) => totalOf(b) - totalOf(a));
-  const top = ranked.slice(0, TOP_N);
-  const rankByName = new Map(top.map((d, i) => [d.name, i + 1]));
-
+  const top = [...data].sort((a, b) => totalOf(b) - totalOf(a)).slice(0, TOP_N);
+  // Proportional to the leaderboard's own max, not each row's own total —
+  // a leaderboard has to keep bar length comparable across rows, otherwise
+  // a 1-point row and a 46-point row would render the same length.
   const maxTotal = Math.max(...top.map(totalOf), 1);
-
-  // Reverse for display only, so rank #1 renders at the top of the chart
-  // (Recharts vertical-layout bars draw top-to-bottom in array order).
-  const chartData = [...top].reverse().map((d) => ({
-    ...d,
-    total: totalOf(d),
-  }));
+  // A nonzero total that's tiny relative to the leader (e.g. 1 vs 46) would
+  // otherwise render as a near-invisible hairline — give it a visible floor
+  // so "I have a small number of points" doesn't look identical to "broken".
+  const MIN_VISIBLE_WIDTH_PCT = 6;
 
   return (
     <div>
-      <div className="flex items-baseline gap-2.5 flex-wrap mb-3.5">
+      <div className="flex items-baseline gap-2.5 flex-wrap mb-1">
         <span className="font-display font-700 text-[15px] tracking-wide text-pitch">
           LEADERBOARD
         </span>
@@ -287,7 +60,7 @@ export default function LeaderboardBarChart({
         </span>
       </div>
 
-      <div className="flex gap-3.5 flex-wrap mb-3.5">
+      <div className="flex gap-3.5 flex-wrap mb-5 mt-3">
         {SERIES.map((s) => (
           <span
             key={s.key}
@@ -302,60 +75,131 @@ export default function LeaderboardBarChart({
         ))}
       </div>
 
-      <div className="w-full" style={{ height: chartData.length * 56 + 20 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            barCategoryGap={18}
-            margin={{ top: 4, right: 44, left: 4, bottom: 4 }}
-          >
-            <XAxis type="number" hide domain={[0, maxTotal]} />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={150}
-              tickLine={false}
-              axisLine={false}
-              tick={(props) => (
-                <RankedNameTick {...props} rankByName={rankByName} />
-              )}
-            />
-            <Tooltip
-              cursor={{ fill: "rgba(11,61,46,0.04)" }}
-              content={<ChartTooltip />}
-            />
-            {SERIES.map((s, i) => (
-              <Bar
-                key={s.key}
-                dataKey={s.key}
-                stackId="pts"
-                name={s.label}
-                fill={s.color}
-                barSize={26}
-                radius={
-                  i === SERIES.length - 1
-                    ? [0, 6, 6, 0]
-                    : i === 0
-                      ? [6, 0, 0, 6]
-                      : undefined
-                }
-                // Full-width muted track behind every bar — only needs to
-                // be declared once, on the first series, since Recharts
-                // draws one shared background per category row.
-                background={
-                  i === 0 ? { fill: "#e4e0d2", radius: 6 } : undefined
-                }
+      <div className="flex flex-col gap-1.5">
+        {top.map((d, idx) => {
+          const total = totalOf(d);
+          const widthPct = Math.max(
+            (total / maxTotal) * 100,
+            total > 0 ? MIN_VISIBLE_WIDTH_PCT : 0,
+          );
+          const isHovered = hovered === d.name;
+
+          return (
+            <div
+              key={d.name}
+              className="relative flex items-center gap-3.5 py-2 px-2 -mx-2 rounded-md transition-colors"
+              style={
+                isHovered ? { background: "rgba(11,61,46,0.04)" } : undefined
+              }
+              onMouseEnter={() => setHovered(d.name)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <span
+                className="font-display font-700 text-[15px] w-4 text-center shrink-0"
+                style={{
+                  fontFamily: "'DSEG7 Classic', 'Barlow Condensed', monospace",
+                  color: idx === 0 ? "#e8a33d" : "rgba(19,38,31,0.3)",
+                }}
               >
-                <LabelList dataKey={s.key} content={SegmentLabel} />
-                {i === SERIES.length - 1 && (
-                  <LabelList dataKey="total" content={TotalLabel} />
+                {idx + 1}
+              </span>
+
+              <span className="text-[13.5px] font-semibold text-ink shrink-0 w-[110px] truncate">
+                {d.name}
+              </span>
+
+              <div className="flex-1 h-[26px] rounded-md bg-[#eae6d8] relative overflow-hidden">
+                {total === 0 ? (
+                  <span
+                    className="absolute inset-y-0 left-2.5 flex items-center font-display font-700 text-[12px]"
+                    style={{ color: "rgba(19,38,31,0.35)" }}
+                  >
+                    0 pt
+                  </span>
+                ) : (
+                  <div
+                    className="h-full flex"
+                    style={{ width: `${widthPct}%` }}
+                  >
+                    {SERIES.map((s) => {
+                      const v = d[s.key as keyof LeaderboardBarDatum] as
+                        | number
+                        | undefined;
+                      const value = v ?? 0;
+                      if (value <= 0) return null;
+                      const segPctOfBar = (value / total) * 100;
+                      const showLabel =
+                        (segPctOfBar * widthPct) / 100 >= MIN_SEGMENT_WIDTH_PCT;
+                      return (
+                        <div
+                          key={s.key}
+                          className="h-full flex items-center justify-center shrink-0"
+                          style={{
+                            width: `${segPctOfBar}%`,
+                            background: s.color,
+                          }}
+                        >
+                          {showLabel && (
+                            <span
+                              className="font-display font-700 text-[11px]"
+                              style={{ color: "#f5f3ec" }}
+                            >
+                              {value}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-                {i === 0 && <LabelList dataKey="total" content={ZeroLabel} />}
-              </Bar>
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+              </div>
+
+              <span className="font-display font-700 text-[15px] text-pitch w-7 text-right shrink-0">
+                {total}
+              </span>
+
+              {isHovered && (
+                <div
+                  className="absolute z-10 rounded-lg px-3.5 py-3 min-w-[150px] pointer-events-none"
+                  style={{
+                    background: "#13261f",
+                    boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+                    top: "calc(100% + 4px)",
+                    left: 140,
+                  }}
+                >
+                  <div className="font-display font-700 text-[13px] text-chalk mb-1.5">
+                    {d.name}
+                  </div>
+                  {SERIES.map((s) => (
+                    <div
+                      key={s.key}
+                      className="flex items-center justify-between gap-4 text-xs py-0.5"
+                      style={{ color: "rgba(245,243,236,0.55)" }}
+                    >
+                      <span>{s.label}</span>
+                      <span className="font-semibold text-chalk">
+                        {(d[s.key as keyof LeaderboardBarDatum] as number) ?? 0}
+                      </span>
+                    </div>
+                  ))}
+                  <div
+                    className="flex items-center justify-between gap-4 text-xs pt-1.5 mt-1"
+                    style={{
+                      borderTop: "1px solid rgba(245,243,236,0.15)",
+                      color: "rgba(245,243,236,0.55)",
+                    }}
+                  >
+                    <span>Total</span>
+                    <span className="font-bold" style={{ color: "#e8a33d" }}>
+                      {total}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
