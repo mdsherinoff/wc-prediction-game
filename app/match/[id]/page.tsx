@@ -67,11 +67,7 @@ export default async function MatchDetailPage({
     match.awayTeamId ? getRecentForm(match.awayTeamId, match.kickoff) : [],
   ]);
 
-  const now = new Date();
-  const oneHourBeforeKickoff = new Date(
-    match.kickoff.getTime() - 60 * 60 * 1000,
-  );
-  const predictionsRevealed = now >= oneHourBeforeKickoff;
+  const predictionsRevealed = true;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
