@@ -6,7 +6,10 @@ import Google from "next-auth/providers/google";
 function getAllowedEmails(): string[] | null {
   const raw = process.env.ALLOWED_EMAILS?.trim();
   if (!raw) return null;
-  return raw.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 export const authConfig: NextAuthConfig = {
@@ -29,6 +32,7 @@ export const authConfig: NextAuthConfig = {
         nextUrl.pathname.startsWith("/knockouts") ||
         nextUrl.pathname.startsWith("/results") ||
         nextUrl.pathname.startsWith("/match") ||
+        nextUrl.pathname.startsWith("/users") ||
         nextUrl.pathname.startsWith("/admin");
       if (isProtected && !isLoggedIn) {
         return Response.redirect(new URL("/login", nextUrl));

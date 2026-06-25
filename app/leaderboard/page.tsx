@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -98,29 +99,34 @@ export default async function LeaderboardPage() {
                 >
                   {i + 1}
                 </td>
-                <td className="py-2.5 px-3 sm:py-3 sm:px-4 flex items-center gap-2 text-[var(--chalk)]">
-                  {r.image ? (
-                    <Image
-                      src={r.image}
-                      alt={r.name}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                  ) : (
-                    <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center font-display font-700 text-[10px] text-[var(--amber)] shrink-0"
-                      style={{ background: "rgba(0,0,0,0.3)" }}
-                    >
-                      {r.name
-                        .split(" ")
-                        .map((p) => p[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()}
-                    </span>
-                  )}
-                  {r.name}
+                <td className="py-2.5 px-3 sm:py-3 sm:px-4">
+                  <Link
+                    href={`/users/${r.id}`}
+                    className="flex items-center gap-2 text-[var(--chalk)] hover:text-[var(--amber)] transition"
+                  >
+                    {r.image ? (
+                      <Image
+                        src={r.image}
+                        alt={r.name}
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center font-display font-700 text-[10px] text-[var(--amber)] shrink-0"
+                        style={{ background: "rgba(0,0,0,0.3)" }}
+                      >
+                        {r.name
+                          .split(" ")
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                    )}
+                    {r.name}
+                  </Link>
                 </td>
                 <td
                   className="py-2.5 px-3 sm:py-3 sm:px-4 text-right"
