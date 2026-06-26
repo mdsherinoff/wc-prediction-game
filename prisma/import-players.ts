@@ -10,6 +10,11 @@
  *
  * Safe to re-run any time you download a fresher copy — upserts by
  * (name, country), so existing players get refreshed instead of duplicated.
+ *
+ * Performance note: this batches all reads up front and all writes via
+ * a single transaction of upserts, rather than doing one round-trip per
+ * row sequentially — that approach was timing out against Neon's
+ * serverless connection on large CSVs (1000+ rows).
  */
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "fs";
@@ -18,11 +23,6 @@ import { join } from "path";
 const prisma = new PrismaClient();
 const CSV_PATH = join(process.cwd(), "players.csv");
 
-/**
- * Minimal CSV parser handling quoted fields (in case any club/name contains
- * a comma, e.g. "Paris Saint-Germain, B"). Good enough for this dataset's
- * shape without pulling in a dependency.
- */
 function parseCsv(text: string): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
   const headers = splitCsvLine(lines[0]);
@@ -55,50 +55,80 @@ function splitCsvLine(line: string): string[] {
   return result;
 }
 
+function toIntOrNull(val: string | undefined): number | null {
+  if (!val || val === "") return null;
+  const n = parseInt(val, 10);
+  return isNaN(n) ? null : n;
+}
+
+// Batch size for each transaction — small enough to avoid a single huge
+// transaction timing out, large enough to drastically cut round-trips
+// versus one-at-a-time.
+const BATCH_SIZE = 100;
+
 async function main() {
   const raw = readFileSync(CSV_PATH, "utf-8");
   const rows = parseCsv(raw);
   console.log(`Parsed ${rows.length} player rows.`);
 
-  let created = 0;
-  let updated = 0;
-  let skipped = 0;
+  const validRows = rows
+    .map((row) => {
+      const name = row["player"];
+      const country = row["team_country"] || row["team"];
+      if (!name || !country) return null;
 
-  for (const row of rows) {
-    const name = row["player"];
-    const country = row["team_country"] || row["team"];
-    if (!name || !country) {
-      console.warn("Skipping row with missing player/country:", row);
-      skipped++;
-      continue;
-    }
+      const birthYearRaw = row["birth_year"];
+      const birthYear = birthYearRaw ? parseInt(birthYearRaw, 10) : null;
 
-    const birthYearRaw = row["birth_year"];
-    const birthYear = birthYearRaw ? parseInt(birthYearRaw, 10) : null;
+      return {
+        name,
+        country,
+        position: row["position"] || null,
+        club: row["club"] || null,
+        ageLabel: row["age"] || null,
+        birthYear: birthYear && !isNaN(birthYear) ? birthYear : null,
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
 
-    const data = {
-      position: row["position"] || null,
-      club: row["club"] || null,
-      ageLabel: row["age"] || null,
-      birthYear: birthYear && !isNaN(birthYear) ? birthYear : null,
-    };
+  const skipped = rows.length - validRows.length;
+  console.log(
+    `${validRows.length} valid rows, ${skipped} skipped (missing player/country).`,
+  );
 
-    const existing = await prisma.player.findUnique({
-      where: { name_country: { name, country } },
-    });
+  let processed = 0;
 
-    if (existing) {
-      await prisma.player.update({ where: { id: existing.id }, data });
-      updated++;
-    } else {
-      await prisma.player.create({ data: { name, country, ...data } });
-      created++;
-    }
+  for (let i = 0; i < validRows.length; i += BATCH_SIZE) {
+    const batch = validRows.slice(i, i + BATCH_SIZE);
+
+    await prisma.$transaction(
+      batch.map((r) =>
+        prisma.player.upsert({
+          where: { name_country: { name: r.name, country: r.country } },
+          update: {
+            position: r.position,
+            club: r.club,
+            ageLabel: r.ageLabel,
+            birthYear: r.birthYear,
+          },
+          create: {
+            name: r.name,
+            country: r.country,
+            position: r.position,
+            club: r.club,
+            ageLabel: r.ageLabel,
+            birthYear: r.birthYear,
+          },
+        }),
+      ),
+      { timeout: 30000 },
+    );
+
+    processed += batch.length;
+    console.log(`Processed ${processed}/${validRows.length}...`);
   }
 
-  console.log(
-    `Done. Created ${created}, updated ${updated}, skipped ${skipped}.`,
-  );
+  console.log("Done.");
 }
 
 main()
