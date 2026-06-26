@@ -23,6 +23,7 @@ model User {
   knockoutPredictions KnockoutPrediction[]
   bracketPicks        BracketPick[]
   manualAdjustment    ManualAdjustment?
+  awardPicks          AwardPick[]
 
   createdAt DateTime @default(now())
 }
@@ -206,4 +207,55 @@ model ManualAdjustment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Player {
+  id        String  @id @default(cuid())
+  name      String
+  country   String  // matches team_country from the CSV, ideally also matching Team.name
+  position  String? // raw code from CSV: "FW", "MF", "DF", "GK"
+  club      String?
+  ageLabel  String? // raw "27-010" style string from CSV, display-only
+  birthYear Int?    // used to enforce the Young Player award's Jan 1 2005 cutoff
+
+  awardPicks   AwardPick[]
+  awardWinners AwardWinner[]
+
+  @@unique([name, country])
+  @@index([country])
+  @@index([position])
+}
+
+enum AwardCategory {
+  GOLDEN_BALL
+  GOLDEN_BOOT
+  GOLDEN_GLOVE
+  YOUNG_PLAYER
+}
+
+model AwardPick {
+  id       String        @id @default(cuid())
+  userId   String
+  category AwardCategory
+  playerId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  pointsAwarded Int?
+  scoredAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, category])
+  @@index([category])
+}
+
+// The actual real-world winner of each award, set by admin once announced.
+model AwardWinner {
+  category  AwardCategory @id
+  playerId  String
+  player    Player        @relation(fields: [playerId], references: [id])
+  decidedAt DateTime      @default(now())
 }

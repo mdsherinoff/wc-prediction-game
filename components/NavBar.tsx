@@ -14,6 +14,7 @@ type NavUser = {
 const LINKS = [
   { href: "/groups", label: "Groups" },
   { href: "/knockouts", label: "Knockouts" },
+  { href: "/awards", label: "Awards" },
   { href: "/results", label: "Results" },
   { href: "/leaderboard", label: "Leaderboard" },
 ];

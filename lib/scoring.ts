@@ -35,6 +35,16 @@ export function roundLockTime(firstMatchKickoffInRound: Date): Date {
   return lockTime(firstMatchKickoffInRound);
 }
 
+/** Award picks score 1 point if the user's pick matches the real winner. */
+export function scoreAwardPick(pickedPlayerId: string, actualWinnerPlayerId: string): number {
+  return pickedPlayerId === actualWinnerPlayerId ? 1 : 0;
+}
+
+/** Award picks lock exactly at kickoff of the first Quarter-Final match — no buffer. */
+export function isAwardPicksLocked(firstQfKickoff: Date, now: Date = new Date()): boolean {
+  return now.getTime() >= firstQfKickoff.getTime();
+}
+
 /** Group stage scoring: exact scoreline correct = 1 point. Nothing for "right winner only". */
 export function scoreGroupPrediction(
   predHome: number | null,
