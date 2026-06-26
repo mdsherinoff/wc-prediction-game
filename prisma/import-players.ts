@@ -96,15 +96,37 @@ async function main() {
     `${validRows.length} valid rows, ${skipped} skipped (missing player/country).`,
   );
 
-  const mexico = validRows.filter((r) => r.country === "Mexico");
-
-  console.log("Mexico players:", mexico.length);
-  console.log(mexico.slice(0, 10));
-
   let processed = 0;
 
   for (let i = 0; i < validRows.length; i += BATCH_SIZE) {
     const batch = validRows.slice(i, i + BATCH_SIZE);
+
+    await prisma.$transaction(
+      batch.map((player) =>
+        prisma.player.upsert({
+          where: {
+            name_country: {
+              name: player.name,
+              country: player.country,
+            },
+          },
+          update: {
+            position: player.position,
+            club: player.club,
+            ageLabel: player.ageLabel,
+            birthYear: player.birthYear,
+          },
+          create: {
+            name: player.name,
+            country: player.country,
+            position: player.position,
+            club: player.club,
+            ageLabel: player.ageLabel,
+            birthYear: player.birthYear,
+          },
+        }),
+      ),
+    );
 
     processed += batch.length;
     console.log(`Processed ${processed}/${validRows.length}...`);
