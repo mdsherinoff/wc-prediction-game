@@ -67,7 +67,12 @@ export default async function LeaderboardPage() {
             href={`/users/${r.id}`}
             className="scoreboard-card flex items-center gap-3 px-3 py-2.5"
             style={
-              i === 0 ? { background: "rgba(232,163,61,0.08)" } : undefined
+              i === 0
+                ? {
+                    background: "rgba(232,163,61,0.12)",
+                    border: "1px solid rgba(232,163,61,0.35)",
+                  }
+                : undefined
             }
           >
             <span
@@ -101,7 +106,11 @@ export default async function LeaderboardPage() {
               </span>
             )}
 
-            <span className="flex-1 min-w-0 truncate text-[var(--chalk)] text-sm">
+            <span
+              className={`flex-1 min-w-0 truncate text-sm ${
+                i === 0 ? "text-[var(--amber)]" : "text-[var(--chalk)]"
+              }`}
+            >
               {r.name}
             </span>
 
