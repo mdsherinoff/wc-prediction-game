@@ -35,9 +35,13 @@ export function roundLockTime(firstMatchKickoffInRound: Date): Date {
   return lockTime(firstMatchKickoffInRound);
 }
 
-/** Award picks score 1 point if the user's pick matches the real winner. */
-export function scoreAwardPick(pickedPlayerId: string, actualWinnerPlayerId: string): number {
-  return pickedPlayerId === actualWinnerPlayerId ? 1 : 0;
+/** Award picks score configurable points if the user's pick matches the real winner. */
+export function scoreAwardPick(
+  pickedPlayerId: string,
+  actualWinnerPlayerId: string,
+  pointsForCorrect: number
+): number {
+  return pickedPlayerId === actualWinnerPlayerId ? pointsForCorrect : 0;
 }
 
 /** Award picks lock exactly at kickoff of the first Quarter-Final match — no buffer. */
@@ -45,17 +49,18 @@ export function isAwardPicksLocked(firstQfKickoff: Date, now: Date = new Date())
   return now.getTime() >= firstQfKickoff.getTime();
 }
 
-/** Group stage scoring: exact scoreline correct = 1 point. Nothing for "right winner only". */
+/** Group stage scoring: exact scoreline correct = configurable points. Nothing for "right winner only". */
 export function scoreGroupPrediction(
   predHome: number | null,
   predAway: number | null,
   actualHome: number,
   actualAway: number,
-  knownIncorrect = false,
+  knownIncorrect: boolean,
+  pointsForExact: number
 ): number {
   if (knownIncorrect) return 0;
   if (predHome == null || predAway == null) return 0;
-  return predHome === actualHome && predAway === actualAway ? 1 : 0;
+  return predHome === actualHome && predAway === actualAway ? pointsForExact : 0;
 }
 
 /**
@@ -71,6 +76,8 @@ export function scoreKnockoutPrediction(params: {
   actualHome: number;
   actualAway: number;
   knownIncorrect?: boolean;
+  pointsForWinner: number;
+  pointsForExactBonus: number;
 }): number {
   const {
     predictedWinnerTeamId,
@@ -80,28 +87,34 @@ export function scoreKnockoutPrediction(params: {
     actualHome,
     actualAway,
     knownIncorrect,
+    pointsForWinner,
+    pointsForExactBonus,
   } = params;
 
   if (knownIncorrect || !predictedWinnerTeamId) return 0;
 
   let points = 0;
   if (predictedWinnerTeamId === actualWinnerTeamId) {
-    points += 1;
+    points += pointsForWinner;
     if (
       predHome != null &&
       predAway != null &&
       predHome === actualHome &&
       predAway === actualAway
     ) {
-      points += 2;
+      points += pointsForExactBonus;
     }
   }
   return points;
 }
 
-/** Bracket predictor: 1 point if the picked team is indeed the real winner of that slot. */
-export function scoreBracketPick(pickedTeamId: string, actualWinnerTeamId: string): number {
-  return pickedTeamId === actualWinnerTeamId ? 1 : 0;
+/** Bracket predictor: configurable points if the picked team is indeed the real winner of that slot. */
+export function scoreBracketPick(
+  pickedTeamId: string,
+  actualWinnerTeamId: string,
+  pointsForCorrect: number
+): number {
+  return pickedTeamId === actualWinnerTeamId ? pointsForCorrect : 0;
 }
 
 export function stageLabel(stage: Stage): string {

@@ -259,3 +259,12 @@ model AwardWinner {
   player    Player        @relation(fields: [playerId], references: [id])
   decidedAt DateTime      @default(now())
 }
+
+model PointsConfig {
+  key   String @id // e.g. "GROUP_EXACT", "KNOCKOUT_WINNER", "KNOCKOUT_EXACT_BONUS", "BRACKET_ADVANCER", "AWARD_PICK"
+  value Int
+  label String // human-readable label for the admin UI
+  group String // "GROUP" | "KNOCKOUT" | "BRACKET" | "AWARDS" — for organizing the dashboard
+
+  updatedAt DateTime @updatedAt
+}

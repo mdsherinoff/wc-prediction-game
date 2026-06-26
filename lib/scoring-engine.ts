@@ -4,7 +4,13 @@ import {
   scoreGroupPrediction,
   scoreKnockoutPrediction,
   scoreBracketPick,
+  scoreAwardPick,
 } from "@/lib/scoring";
+import {
+  getPointsConfig,
+  knockoutWinnerPoints,
+  knockoutExactBonusPoints,
+} from "@/lib/points-cofig";
 
 /**
  * Scans all FINISHED matches and awards points to any predictions/picks
@@ -12,8 +18,14 @@ import {
  * already-scored rows are skipped.
  */
 export async function scoreFinishedMatches() {
+  const config = await getPointsConfig();
+
   const finishedMatches = await prisma.match.findMany({
-    where: { status: MatchStatus.FINISHED, homeScore: { not: null }, awayScore: { not: null } },
+    where: {
+      status: MatchStatus.FINISHED,
+      homeScore: { not: null },
+      awayScore: { not: null },
+    },
   });
 
   let groupScored = 0;
@@ -34,6 +46,7 @@ export async function scoreFinishedMatches() {
           match.homeScore,
           match.awayScore,
           p.knownIncorrect,
+          config.GROUP_EXACT,
         );
         await prisma.groupPrediction.update({
           where: { id: p.id },
@@ -57,6 +70,8 @@ export async function scoreFinishedMatches() {
           actualHome: match.homeScore,
           actualAway: match.awayScore,
           knownIncorrect: p.knownIncorrect,
+          pointsForWinner: knockoutWinnerPoints(config, match.stage),
+          pointsForExactBonus: knockoutExactBonusPoints(config, match.stage),
         });
         await prisma.knockoutPrediction.update({
           where: { id: p.id },
@@ -71,7 +86,11 @@ export async function scoreFinishedMatches() {
           where: { slotKey: match.slotKey, scoredAt: null },
         });
         for (const pick of picks) {
-          const points = scoreBracketPick(pick.teamId, match.winnerTeamId);
+          const points = scoreBracketPick(
+            pick.teamId,
+            match.winnerTeamId,
+            config.BRACKET_ADVANCER,
+          );
           await prisma.bracketPick.update({
             where: { id: pick.id },
             data: { pointsAwarded: points, scoredAt: new Date() },
@@ -103,4 +122,30 @@ export async function maybeUnlockBracket() {
     return true;
   }
   return false;
+}
+
+export async function scoreAwardPicks() {
+  const config = await getPointsConfig();
+  const winners = await prisma.awardWinner.findMany();
+  let scored = 0;
+
+  for (const winner of winners) {
+    const picks = await prisma.awardPick.findMany({
+      where: { category: winner.category, scoredAt: null },
+    });
+    for (const pick of picks) {
+      const points = scoreAwardPick(
+        pick.playerId,
+        winner.playerId,
+        config.AWARD_PICK,
+      );
+      await prisma.awardPick.update({
+        where: { id: pick.id },
+        data: { pointsAwarded: points, scoredAt: new Date() },
+      });
+      scored++;
+    }
+  }
+
+  return { scored };
 }

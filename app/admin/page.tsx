@@ -33,6 +33,12 @@ export default async function AdminPage() {
         <h1 className="font-display text-3xl font-700 text-pitch">Admin</h1>
         <div className="flex gap-2 flex-wrap">
           <Link
+            href="/admin/points-config"
+            className="text-sm bg-amber text-ink px-3 py-1.5 rounded font-semibold hover:brightness-110"
+          >
+            Points config →
+          </Link>
+          <Link
             href="/admin/match-predictions"
             className="text-sm bg-ink text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110"
           >
