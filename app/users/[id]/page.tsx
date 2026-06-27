@@ -2,6 +2,14 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import PlayerCard from "@/components/PlayerCard";
+
+const AWARD_LABELS: Record<string, string> = {
+  GOLDEN_BALL: "Golden Ball",
+  GOLDEN_BOOT: "Golden Boot",
+  GOLDEN_GLOVE: "Golden Glove",
+  YOUNG_PLAYER: "Best Young Player",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +40,7 @@ export default async function UserStatsPage({
       },
       bracketPicks: { select: { pointsAwarded: true } },
       manualAdjustment: { select: { points: true } },
+      awardPicks: { include: { player: true } },
     },
   });
 
@@ -45,6 +54,7 @@ export default async function UserStatsPage({
       knockoutPredictions: { select: { pointsAwarded: true } },
       bracketPicks: { select: { pointsAwarded: true } },
       manualAdjustment: { select: { points: true } },
+      awardPicks: { select: { pointsAwarded: true } },
     },
   });
   const totals = allUsers
@@ -54,6 +64,7 @@ export default async function UserStatsPage({
         sum(u.groupPredictions.map((p) => p.pointsAwarded)) +
         sum(u.knockoutPredictions.map((p) => p.pointsAwarded)) +
         sum(u.bracketPicks.map((p) => p.pointsAwarded)) +
+        sum(u.awardPicks.map((p) => p.pointsAwarded)) +
         (u.manualAdjustment?.points ?? 0),
     }))
     .sort((a, b) => b.total - a.total);
@@ -64,8 +75,14 @@ export default async function UserStatsPage({
     user.knockoutPredictions.map((p) => p.pointsAwarded),
   );
   const bracketPoints = sum(user.bracketPicks.map((p) => p.pointsAwarded));
+  const awardPoints = sum(user.awardPicks.map((p) => p.pointsAwarded));
   const adjustmentPoints = user.manualAdjustment?.points ?? 0;
-  const total = groupPoints + knockoutPoints + bracketPoints + adjustmentPoints;
+  const total =
+    groupPoints +
+    knockoutPoints +
+    bracketPoints +
+    awardPoints +
+    adjustmentPoints;
 
   const allScored = [
     ...user.groupPredictions.map((p) => p.pointsAwarded),
@@ -115,10 +132,11 @@ export default async function UserStatsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
         <StatBox label="GROUPS" value={groupPoints} />
         <StatBox label="KNOCKOUTS" value={knockoutPoints} />
         <StatBox label="BRACKET" value={bracketPoints} />
+        <StatBox label="AWARDS" value={awardPoints} />
         <StatBox label="TOTAL" value={total} highlight />
       </div>
 
@@ -143,6 +161,28 @@ export default async function UserStatsPage({
           Includes a manual adjustment of {adjustmentPoints > 0 ? "+" : ""}
           {adjustmentPoints} pts.
         </p>
+      )}
+
+      {user.awardPicks.length > 0 && (
+        <div className="mb-8">
+          <h2 className="font-display text-lg font-bold tracking-wide text-[var(--pitch)] mb-3">
+            Award picks
+          </h2>
+          <div className="grid grid-cols-4 gap-3">
+            {user.awardPicks.map((pick) => (
+              <PlayerCard
+                key={pick.id}
+                size="compact"
+                name={pick.player.name}
+                country={pick.player.country}
+                position={pick.player.position}
+                club={pick.player.club}
+                ageLabel={pick.player.ageLabel}
+                awardLabel={AWARD_LABELS[pick.category] ?? pick.category}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
       <h2 className="font-display text-lg font-bold tracking-wide text-[var(--pitch)] mb-3">
