@@ -122,38 +122,132 @@ export default async function MatchDetailPage({
       ) : (
         <div className="space-y-2">
           {match.stage === "GROUP"
-            ? match.groupPredictions.map((p) => (
-                <div
-                  key={p.id}
-                  className="scoreboard-card px-4 py-2 flex items-center justify-between text-sm"
-                >
-                  <span className="text-[var(--chalk)]">{p.user.name}</span>
-                  <span className="font-display font-bold text-[var(--amber)]">
-                    {p.homeScore} – {p.awayScore}
-                  </span>
-                </div>
-              ))
-            : match.knockoutPredictions.map((p) => (
-                <div
-                  key={p.id}
-                  className="scoreboard-card px-4 py-2 flex items-center justify-between text-sm"
-                >
-                  <span className="text-[var(--chalk)]">{p.user.name}</span>
-                  <span className="font-display font-bold text-[var(--amber)]">
-                    {p.predictedWinner === match.homeTeamId
-                      ? match.homeTeam?.name
-                      : match.awayTeam?.name}
-                    {p.homeScore != null && p.awayScore != null && (
-                      <span
-                        style={{ color: "var(--board-text-muted)" }}
-                        className="ml-2"
-                      >
-                        ({p.homeScore}-{p.awayScore})
-                      </span>
-                    )}
-                  </span>
-                </div>
-              ))}
+            ? match.groupPredictions.map((p) => {
+                const isFinished = match.status === "FINISHED";
+                const isCorrect =
+                  isFinished && !p.knownIncorrect && (p.pointsAwarded ?? 0) > 0;
+                const isWrong =
+                  isFinished &&
+                  (p.knownIncorrect || (p.pointsAwarded ?? 0) === 0);
+                return (
+                  <div
+                    key={p.id}
+                    className="scoreboard-card px-4 py-2 flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="text-[var(--chalk)] flex items-center gap-2 min-w-0">
+                      {isFinished && (
+                        <span
+                          className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            isCorrect
+                              ? "bg-turf text-chalk"
+                              : isWrong
+                                ? "bg-red text-chalk"
+                                : ""
+                          }`}
+                        >
+                          {isCorrect ? "✓" : isWrong ? "✗" : ""}
+                        </span>
+                      )}
+                      <span className="truncate">{p.user.name}</span>
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0">
+                      {p.knownIncorrect ? (
+                        <span
+                          style={{ color: "var(--board-text-muted)" }}
+                          className="text-xs"
+                        >
+                          marked wrong
+                        </span>
+                      ) : (
+                        <span className="font-display font-bold text-[var(--amber)]">
+                          {p.homeScore} – {p.awayScore}
+                        </span>
+                      )}
+                      {isFinished && (p.pointsAwarded ?? 0) > 0 && (
+                        <span className="text-xs font-semibold text-[var(--amber)]">
+                          +{p.pointsAwarded}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })
+            : match.knockoutPredictions.map((p) => {
+                const isFinished = match.status === "FINISHED";
+                const points = p.pointsAwarded ?? 0;
+                const gotWinner = isFinished && !p.knownIncorrect && points > 0;
+                const gotExactBonus =
+                  isFinished && !p.knownIncorrect && points >= 2;
+                const isWrong =
+                  isFinished && (p.knownIncorrect || points === 0);
+                return (
+                  <div
+                    key={p.id}
+                    className="scoreboard-card px-4 py-2 flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="text-[var(--chalk)] flex items-center gap-2 min-w-0">
+                      {isFinished && (
+                        <span
+                          className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            gotExactBonus
+                              ? "bg-amber text-ink"
+                              : gotWinner
+                                ? "bg-turf text-chalk"
+                                : isWrong
+                                  ? "bg-red text-chalk"
+                                  : ""
+                          }`}
+                          title={
+                            gotExactBonus
+                              ? "Winner + exact score"
+                              : gotWinner
+                                ? "Correct winner"
+                                : "Incorrect"
+                          }
+                        >
+                          {gotExactBonus
+                            ? "★"
+                            : gotWinner
+                              ? "✓"
+                              : isWrong
+                                ? "✗"
+                                : ""}
+                        </span>
+                      )}
+                      <span className="truncate">{p.user.name}</span>
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0">
+                      {p.knownIncorrect ? (
+                        <span
+                          style={{ color: "var(--board-text-muted)" }}
+                          className="text-xs"
+                        >
+                          marked wrong
+                        </span>
+                      ) : (
+                        <span className="font-display font-bold text-[var(--amber)]">
+                          {p.predictedWinner === match.homeTeamId
+                            ? match.homeTeam?.name
+                            : match.awayTeam?.name}
+                          {p.homeScore != null && p.awayScore != null && (
+                            <span
+                              style={{ color: "var(--board-text-muted)" }}
+                              className="ml-2"
+                            >
+                              ({p.homeScore}-{p.awayScore})
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {isFinished && points > 0 && (
+                        <span className="text-xs font-semibold text-[var(--amber)]">
+                          +{points}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
           {match.stage === "GROUP" && match.groupPredictions.length === 0 && (
             <p className="text-sm text-ink/40 text-center">
               No one predicted this match.
