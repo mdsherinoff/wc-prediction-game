@@ -65,6 +65,7 @@ export default function KnockoutMatchCard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [flash, setFlash] = useState<"success" | "error" | null>(null);
 
   const kickoffDate = new Date(match.kickoff);
   const lockTime = useMemo(
@@ -123,9 +124,13 @@ export default function KnockoutMatchCard({
         throw new Error(body.error ?? "Failed to save");
       }
       setSaved(true);
+      setFlash("success");
       setTimeout(() => setSaved(false), 1500);
+      setTimeout(() => setFlash(null), 1500);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");
+      setFlash("error");
+      setTimeout(() => setFlash(null), 1500);
     } finally {
       setSaving(false);
     }
@@ -145,7 +150,25 @@ export default function KnockoutMatchCard({
   const disabled = locked || notYetOpen;
 
   return (
-    <div className="scoreboard-card px-4 py-3 mx-2">
+    <div
+      className="scoreboard-card px-4 py-3 mx-2 relative transition-all duration-300"
+      style={{
+        boxShadow:
+          flash === "success"
+            ? "0 0 0 2px var(--turf)"
+            : flash === "error"
+              ? "0 0 0 2px var(--red)"
+              : undefined,
+      }}
+    >
+      {flash === "success" && (
+        <div
+          className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold z-10"
+          style={{ background: "var(--turf)", color: "var(--chalk)" }}
+        >
+          ✓
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-[var(--board-divider)]">
         <span
           className="text-[11px] tracking-wide"
