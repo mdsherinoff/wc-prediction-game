@@ -13,6 +13,7 @@ export default async function LeaderboardPage() {
       groupPredictions: { select: { pointsAwarded: true } },
       knockoutPredictions: { select: { pointsAwarded: true } },
       bracketPicks: { select: { pointsAwarded: true } },
+      awardPicks: { select: { pointsAwarded: true } },
       manualAdjustment: { select: { points: true } },
     },
   });
@@ -27,6 +28,7 @@ export default async function LeaderboardPage() {
         u.knockoutPredictions.map((p) => p.pointsAwarded),
       );
       const bracketPoints = sum(u.bracketPicks.map((p) => p.pointsAwarded));
+      const awardPoints = sum(u.awardPicks.map((p) => p.pointsAwarded));
       const adjustmentPoints = u.manualAdjustment?.points ?? 0;
       return {
         id: u.id,
@@ -35,20 +37,34 @@ export default async function LeaderboardPage() {
         groupPoints,
         knockoutPoints,
         bracketPoints,
+        awardPoints,
         adjustmentPoints,
-        total: groupPoints + knockoutPoints + bracketPoints + adjustmentPoints,
+        total:
+          groupPoints +
+          knockoutPoints +
+          bracketPoints +
+          awardPoints +
+          adjustmentPoints,
       };
     })
     .sort((a, b) => b.total - a.total);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="font-display text-3xl font-700 text-pitch mb-1">
-        Leaderboard
-      </h1>
+      <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+        <h1 className="font-display text-3xl font-700 text-pitch">
+          Leaderboard
+        </h1>
+        <a
+          href="/api/leaderboard/pdf"
+          className="text-xs bg-pitch text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110 shrink-0"
+        >
+          Download PDF
+        </a>
+      </div>
       <p className="text-sm text-ink/60 mb-8">
         Group: exact score only. Knockouts: winner + score bonus. Bracket:
-        correct advancer picks.
+        correct advancer picks. Awards: correct player pick.
       </p>
 
       {/* Mobile: stacked cards, rank + name + total always visible, tap for breakdown */}
@@ -156,6 +172,9 @@ export default async function LeaderboardPage() {
                 Bracket
               </th>
               <th className="py-3 px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)] text-right">
+                Awards
+              </th>
+              <th className="py-3 px-4 font-display font-600 text-[12px] tracking-wide text-[var(--amber)] text-right">
                 Adj.
               </th>
               <th className="py-3 px-4 font-display font-700 text-[12px] tracking-wide text-[var(--amber)] text-right">
@@ -229,6 +248,12 @@ export default async function LeaderboardPage() {
                   {r.bracketPoints}
                 </td>
                 <td
+                  className="py-3 px-4 text-right"
+                  style={{ color: "rgba(245,243,236,0.7)" }}
+                >
+                  {r.awardPoints}
+                </td>
+                <td
                   className={`py-3 px-4 text-right ${
                     r.adjustmentPoints !== 0
                       ? "text-[var(--amber)] font-semibold"
@@ -258,7 +283,7 @@ export default async function LeaderboardPage() {
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="py-8 text-center"
                   style={{ color: "rgba(245,243,236,0.4)" }}
                 >

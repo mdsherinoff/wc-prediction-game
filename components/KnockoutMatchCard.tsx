@@ -169,6 +169,7 @@ export default function KnockoutMatchCard({
           ✓
         </div>
       )}
+
       <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-[var(--board-divider)]">
         <span
           className="text-[11px] tracking-wide"
@@ -208,80 +209,78 @@ export default function KnockoutMatchCard({
         )}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[match.homeTeam, match.awayTeam].map((team) => (
-          <div key={team!.id} className="flex-1 min-w-[120px]">
-            <Link
-              href={`/match/${match.id}`}
-              className="block mb-1 font-display text-sm font-bold text-[var(--chalk)] hover:text-[var(--amber)] transition"
-            >
-              {team!.name.toUpperCase()}
-            </Link>
+      {!disabled && (
+        <div
+          className="mb-2 text-[10px] tracking-wide text-center"
+          style={{ color: "var(--board-digit-dim)" }}
+        >
+          TAP A TEAM TO PICK THEM TO WIN · GUESS THE SCORE (+2 PTS IF EXACT)
+        </div>
+      )}
 
-            <button
-              disabled={disabled}
-              onClick={() => setWinner(team!.id)}
-              className={`w-full px-3 py-2 rounded border transition ${
-                winner === team!.id
-                  ? "bg-[var(--amber)] text-[var(--ink)] border-[var(--amber)]"
-                  : "bg-transparent text-[var(--chalk)] border-[var(--board-divider)] hover:border-[var(--amber)]"
-              } disabled:opacity-60 disabled:cursor-not-allowed`}
-            >
-              PICK WINNER
-            </button>
-          </div>
-        ))}
+      <div className="flex flex-col gap-2">
+        {[match.homeTeam, match.awayTeam].map((team, idx) => {
+          const isHome = idx === 0;
+          const scoreValue = isHome ? home : away;
+          const setScoreValue = isHome ? setHome : setAway;
+          const isPicked = winner === team!.id;
+
+          return (
+            <div key={team!.id} className="flex items-center gap-2">
+              <button
+                disabled={disabled}
+                onClick={() => setWinner(team!.id)}
+                className={`flex-1 min-w-0 flex items-center justify-between gap-2 px-3 py-2 rounded border transition text-left ${
+                  isPicked
+                    ? "bg-[var(--amber)] text-[var(--ink)] border-[var(--amber)]"
+                    : "bg-transparent text-[var(--chalk)] border-[var(--board-divider)] hover:border-[var(--amber)]"
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
+              >
+                <span className="font-display text-sm font-bold truncate">
+                  {team!.name.toUpperCase()}
+                </span>
+                {isPicked && (
+                  <span className="text-[10px] font-bold shrink-0">PICKED</span>
+                )}
+              </button>
+
+              <div
+                className={`digit-box w-9 h-9 text-base flex items-center justify-center shrink-0 ${
+                  disabled ? "dim" : ""
+                }`}
+              >
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  inputMode="numeric"
+                  disabled={disabled}
+                  value={scoreValue}
+                  onChange={(e) => setScoreValue(e.target.value)}
+                  aria-label={`${team!.name} score guess`}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {!disabled && (
-        <div className="mt-3">
-          <div
-            className="text-[11px] mb-1.5 tracking-wide"
+        <div className="flex justify-end mt-3 pt-2 border-t border-[var(--board-divider)]">
+          <Link
+            href={`/match/${match.id}`}
+            className="text-[11px] mr-auto self-center hover:text-[var(--amber)] transition"
             style={{ color: "var(--board-text-muted)" }}
           >
-            OPTIONAL SCORE GUESS{" "}
-            <span style={{ color: "var(--board-digit-dim)" }}>
-              (+2 PTS IF EXACT)
-            </span>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="digit-box w-9 h-9 text-base flex items-center justify-center shrink-0">
-              <input
-                type="number"
-                min={0}
-                max={20}
-                inputMode="numeric"
-                value={home}
-                onChange={(e) => setHome(e.target.value)}
-                aria-label="Home score guess"
-              />
-            </div>
-            <span
-              className="shrink-0"
-              style={{ color: "var(--board-text-muted)" }}
-            >
-              -
-            </span>
-            <div className="digit-box w-9 h-9 text-base flex items-center justify-center shrink-0">
-              <input
-                type="number"
-                min={0}
-                max={20}
-                inputMode="numeric"
-                value={away}
-                onChange={(e) => setAway(e.target.value)}
-                aria-label="Away score guess"
-              />
-            </div>
-
-            <button
-              onClick={save}
-              disabled={saving}
-              className="ml-auto font-display text-xs font-bold tracking-wide px-4 py-1.5 rounded border border-[var(--amber)] text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[var(--ink)] transition disabled:opacity-50 whitespace-nowrap"
-            >
-              {saving ? "..." : saved ? "SAVED ✓" : "SAVE"}
-            </button>
-          </div>
+            View match →
+          </Link>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="font-display text-xs font-bold tracking-wide px-4 py-1.5 rounded border border-[var(--amber)] text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[var(--ink)] transition disabled:opacity-50 whitespace-nowrap"
+          >
+            {saving ? "..." : saved ? "SAVED ✓" : "SAVE"}
+          </button>
         </div>
       )}
 
