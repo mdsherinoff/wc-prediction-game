@@ -1,11 +1,12 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import KnockoutMatchCard from "@/components/KnockoutMatchCard";
 import MatchTabs from "@/components/MatchTabs";
+import RoundTabs from "@/components/RoundTabs";
 import { stageLabel } from "@/lib/scoring";
 import { Stage } from "@prisma/client";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -25,67 +26,44 @@ async function getMatches(userId: string) {
 
 type MatchWithRelations = Awaited<ReturnType<typeof getMatches>>[number];
 
-function groupByStage(matches: MatchWithRelations[]) {
-  const byStage = new Map<Stage, MatchWithRelations[]>();
-  for (const m of matches) {
-    if (!byStage.has(m.stage)) byStage.set(m.stage, []);
-    byStage.get(m.stage)!.push(m);
-  }
-  return byStage;
-}
-
-function StageSections({ matches }: { matches: MatchWithRelations[] }) {
-  const byStage = groupByStage(matches);
-
+function MatchList({ matches }: { matches: MatchWithRelations[] }) {
   if (matches.length === 0) {
     return (
       <p className="text-center text-ink/40 py-12 text-sm">Nothing here yet.</p>
     );
   }
-
   return (
-    <>
-      {STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => (
-        <section key={stage} className="mb-10">
-          <h2 className="font-display text-xl font-700 text-turf mb-3">
-            {stageLabel(stage)}
-          </h2>
-          <div className="space-y-3">
-            {byStage.get(stage)!.map((match) => (
-              <KnockoutMatchCard
-                key={match.id}
-                match={{
-                  id: match.id,
-                  kickoff: match.kickoff.toISOString(),
-                  status: match.status,
-                  homeScore: match.homeScore,
-                  awayScore: match.awayScore,
-                  winnerTeamId: match.winnerTeamId,
-                  homeTeam: match.homeTeam
-                    ? { id: match.homeTeam.id, name: match.homeTeam.name }
-                    : null,
-                  awayTeam: match.awayTeam
-                    ? { id: match.awayTeam.id, name: match.awayTeam.name }
-                    : null,
-                }}
-                existingPrediction={
-                  match.knockoutPredictions[0]
-                    ? {
-                        predictedWinner:
-                          match.knockoutPredictions[0].predictedWinner,
-                        homeScore: match.knockoutPredictions[0].homeScore,
-                        awayScore: match.knockoutPredictions[0].awayScore,
-                        pointsAwarded:
-                          match.knockoutPredictions[0].pointsAwarded,
-                      }
-                    : null
+    <div className="space-y-3">
+      {matches.map((match) => (
+        <KnockoutMatchCard
+          key={match.id}
+          match={{
+            id: match.id,
+            kickoff: match.kickoff.toISOString(),
+            status: match.status,
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            winnerTeamId: match.winnerTeamId,
+            homeTeam: match.homeTeam
+              ? { id: match.homeTeam.id, name: match.homeTeam.name }
+              : null,
+            awayTeam: match.awayTeam
+              ? { id: match.awayTeam.id, name: match.awayTeam.name }
+              : null,
+          }}
+          existingPrediction={
+            match.knockoutPredictions[0]
+              ? {
+                  predictedWinner: match.knockoutPredictions[0].predictedWinner,
+                  homeScore: match.knockoutPredictions[0].homeScore,
+                  awayScore: match.knockoutPredictions[0].awayScore,
+                  pointsAwarded: match.knockoutPredictions[0].pointsAwarded,
                 }
-              />
-            ))}
-          </div>
-        </section>
+              : null
+          }
+        />
       ))}
-    </>
+    </div>
   );
 }
 
@@ -113,10 +91,32 @@ export default async function KnockoutsPage() {
     );
   }
 
-  const upcomingMatches = matches.filter((m) => m.status !== "FINISHED");
-  const completedMatches = matches
-    .filter((m) => m.status === "FINISHED")
-    .sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime());
+  const byStage = new Map<Stage, MatchWithRelations[]>();
+  for (const m of matches) {
+    if (!byStage.has(m.stage)) byStage.set(m.stage, []);
+    byStage.get(m.stage)!.push(m);
+  }
+
+  const tabs = STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => {
+    const stageMatches = byStage.get(stage)!;
+    const upcoming = stageMatches.filter((m) => m.status !== "FINISHED");
+    const completed = stageMatches
+      .filter((m) => m.status === "FINISHED")
+      .sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime());
+
+    return {
+      key: stage,
+      label: stageLabel(stage),
+      content: (
+        <MatchTabs
+          upcomingCount={upcoming.length}
+          completedCount={completed.length}
+          upcoming={<MatchList matches={upcoming} />}
+          completed={<MatchList matches={completed} />}
+        />
+      ),
+    };
+  });
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -135,15 +135,10 @@ export default async function KnockoutsPage() {
       </div>
       <p className="text-sm text-ink/60 mb-6">
         Pick the winner for 1 point, plus 2 bonus points if you also call the
-        exact score. Locks 1 minute before kickoff.
+        exact score.
       </p>
 
-      <MatchTabs
-        upcomingCount={upcomingMatches.length}
-        completedCount={completedMatches.length}
-        upcoming={<StageSections matches={upcomingMatches} />}
-        completed={<StageSections matches={completedMatches} />}
-      />
+      <RoundTabs tabs={tabs} />
     </div>
   );
 }

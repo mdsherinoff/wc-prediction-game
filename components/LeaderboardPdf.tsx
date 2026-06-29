@@ -145,7 +145,7 @@ export default function LeaderboardPdf({
           </View>
         ))}
 
-        <Text style={styles.footer}>World Cup 2026 Prediction Pool</Text>
+        <Text style={styles.footer}>PAAQ World Cup 2026 Prediction Pool</Text>
       </Page>
     </Document>
   );

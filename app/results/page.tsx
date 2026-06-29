@@ -1,9 +1,10 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ResultRow from "@/components/ResultRow";
+import RoundTabs from "@/components/RoundTabs";
 import { stageLabel } from "@/lib/scoring";
 import { Stage } from "@prisma/client";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -61,84 +62,80 @@ export default async function ResultsPage() {
     knockoutsByStage.get(m.stage)!.push(m);
   }
 
+  const groupLetters = Array.from(groupsByLetter.keys()).sort((a, b) =>
+    a.localeCompare(b),
+  );
+
+  const tabs = [];
+
+  if (groupMatches.length > 0) {
+    tabs.push({
+      key: "GROUP",
+      label: "Group Stage",
+      content: (
+        <RoundTabs
+          tabs={groupLetters.map((letter) => ({
+            key: letter,
+            label: `Group ${letter}`,
+            content: (
+              <div className="space-y-2">
+                {groupsByLetter.get(letter)!.map((m) => (
+                  <ResultRow
+                    key={m.id}
+                    matchId={m.id}
+                    kickoff={m.kickoff.toISOString()}
+                    homeTeam={m.homeTeam}
+                    awayTeam={m.awayTeam}
+                    homeScore={m.homeScore}
+                    awayScore={m.awayScore}
+                    userPoints={m.groupPredictions[0]?.pointsAwarded ?? null}
+                  />
+                ))}
+              </div>
+            ),
+          }))}
+        />
+      ),
+    });
+  }
+
+  for (const stage of KNOCKOUT_STAGE_ORDER) {
+    if (!knockoutsByStage.has(stage)) continue;
+    tabs.push({
+      key: stage,
+      label: stageLabel(stage),
+      content: (
+        <div className="space-y-2">
+          {knockoutsByStage.get(stage)!.map((m) => (
+            <ResultRow
+              key={m.id}
+              matchId={m.id}
+              kickoff={m.kickoff.toISOString()}
+              homeTeam={m.homeTeam}
+              awayTeam={m.awayTeam}
+              homeScore={m.homeScore}
+              awayScore={m.awayScore}
+              wentToPens={m.wentToPens}
+              penHomeScore={m.penHomeScore}
+              penAwayScore={m.penAwayScore}
+              userPoints={m.knockoutPredictions[0]?.pointsAwarded ?? null}
+            />
+          ))}
+        </div>
+      ),
+    });
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="font-display text-3xl font-700 text-pitch mb-1">
         Results
       </h1>
-      <p className="text-sm text-ink/60 mb-8">
+      <p className="text-sm text-ink/60 mb-6">
         Every completed match so far, with the points you earned on each one.
       </p>
 
-      {groupMatches.length > 0 && (
-        <>
-          <h2 className="font-display text-2xl font-700 text-pitch mb-4">
-            Group stage
-          </h2>
-          {Array.from(groupsByLetter.entries())
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([groupName, matches]) => (
-              <section key={groupName} className="mb-8">
-                <h3 className="font-display text-lg font-700 text-turf mb-3 flex items-center gap-2">
-                  <span className="bg-turf text-chalk w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                    {groupName}
-                  </span>
-                  Group {groupName}
-                </h3>
-                <div className="space-y-2">
-                  {matches.map((m) => (
-                    <ResultRow
-                      key={m.id}
-                      matchId={m.id}
-                      kickoff={m.kickoff.toISOString()}
-                      homeTeam={m.homeTeam}
-                      awayTeam={m.awayTeam}
-                      homeScore={m.homeScore}
-                      awayScore={m.awayScore}
-                      userPoints={m.groupPredictions[0]?.pointsAwarded ?? null}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-        </>
-      )}
-
-      {knockoutMatches.length > 0 && (
-        <>
-          <h2 className="font-display text-2xl font-700 text-pitch mb-4 mt-4">
-            Knockouts
-          </h2>
-          {KNOCKOUT_STAGE_ORDER.filter((s) => knockoutsByStage.has(s)).map(
-            (stage) => (
-              <section key={stage} className="mb-8">
-                <h3 className="font-display text-lg font-700 text-turf mb-3">
-                  {stageLabel(stage)}
-                </h3>
-                <div className="space-y-2">
-                  {knockoutsByStage.get(stage)!.map((m) => (
-                    <ResultRow
-                      key={m.id}
-                      matchId={m.id}
-                      kickoff={m.kickoff.toISOString()}
-                      homeTeam={m.homeTeam}
-                      awayTeam={m.awayTeam}
-                      homeScore={m.homeScore}
-                      awayScore={m.awayScore}
-                      wentToPens={m.wentToPens}
-                      penHomeScore={m.penHomeScore}
-                      penAwayScore={m.penAwayScore}
-                      userPoints={
-                        m.knockoutPredictions[0]?.pointsAwarded ?? null
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-            ),
-          )}
-        </>
-      )}
+      <RoundTabs tabs={tabs} />
     </div>
   );
 }
