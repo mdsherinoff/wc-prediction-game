@@ -3,6 +3,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import GroupMatchCard from "@/components/GroupMatchCard";
 import KnockoutMatchCard from "@/components/KnockoutMatchCard";
+import {
+  getPickDistribution,
+  computePickPercentages,
+} from "@/lib/pick-distribution";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +33,9 @@ async function getTodaysMatches(userId: string) {
       awayTeam: true,
       groupPredictions: { where: { userId } },
       knockoutPredictions: { where: { userId } },
+      _count: {
+        select: { knockoutPredictions: true },
+      },
     },
     orderBy: { kickoff: "asc" },
   });
@@ -39,6 +46,9 @@ export default async function HomePage() {
   const todaysMatches = session?.user?.id
     ? await getTodaysMatches(session.user.id)
     : [];
+  const pickDistribution = await getPickDistribution(
+    todaysMatches.filter((m) => m.stage !== "GROUP").map((m) => m.id),
+  );
 
   return (
     <div>
@@ -121,35 +131,55 @@ export default async function HomePage() {
                     existingPrediction={match.groupPredictions[0] ?? null}
                   />
                 ) : (
-                  <KnockoutMatchCard
-                    key={match.id}
-                    match={{
-                      id: match.id,
-                      kickoff: match.kickoff.toISOString(),
-                      status: match.status,
-                      homeScore: match.homeScore,
-                      awayScore: match.awayScore,
-                      winnerTeamId: match.winnerTeamId,
-                      homeTeam: match.homeTeam
-                        ? { id: match.homeTeam.id, name: match.homeTeam.name }
-                        : null,
-                      awayTeam: match.awayTeam
-                        ? { id: match.awayTeam.id, name: match.awayTeam.name }
-                        : null,
-                    }}
-                    existingPrediction={
-                      match.knockoutPredictions[0]
-                        ? {
-                            predictedWinner:
-                              match.knockoutPredictions[0].predictedWinner,
-                            homeScore: match.knockoutPredictions[0].homeScore,
-                            awayScore: match.knockoutPredictions[0].awayScore,
-                            pointsAwarded:
-                              match.knockoutPredictions[0].pointsAwarded,
-                          }
-                        : null
-                    }
-                  />
+                  (() => {
+                    const { homePct, awayPct } = computePickPercentages({
+                      counts: pickDistribution.get(match.id),
+                      totalPicks: match._count.knockoutPredictions,
+                      homeTeamId: match.homeTeam?.id,
+                      awayTeamId: match.awayTeam?.id,
+                    });
+                    return (
+                      <KnockoutMatchCard
+                        key={match.id}
+                        match={{
+                          id: match.id,
+                          kickoff: match.kickoff.toISOString(),
+                          status: match.status,
+                          homeScore: match.homeScore,
+                          awayScore: match.awayScore,
+                          winnerTeamId: match.winnerTeamId,
+                          homeTeam: match.homeTeam
+                            ? {
+                                id: match.homeTeam.id,
+                                name: match.homeTeam.name,
+                              }
+                            : null,
+                          awayTeam: match.awayTeam
+                            ? {
+                                id: match.awayTeam.id,
+                                name: match.awayTeam.name,
+                              }
+                            : null,
+                        }}
+                        existingPrediction={
+                          match.knockoutPredictions[0]
+                            ? {
+                                predictedWinner:
+                                  match.knockoutPredictions[0].predictedWinner,
+                                homeScore:
+                                  match.knockoutPredictions[0].homeScore,
+                                awayScore:
+                                  match.knockoutPredictions[0].awayScore,
+                                pointsAwarded:
+                                  match.knockoutPredictions[0].pointsAwarded,
+                              }
+                            : null
+                        }
+                        homePickPct={homePct}
+                        awayPickPct={awayPct}
+                      />
+                    );
+                  })()
                 ),
               )}
             </div>
