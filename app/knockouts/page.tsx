@@ -19,14 +19,41 @@ async function getMatches(userId: string) {
       homeTeam: true,
       awayTeam: true,
       knockoutPredictions: { where: { userId } },
+      _count: {
+        select: { knockoutPredictions: true },
+      },
     },
     orderBy: { kickoff: "asc" },
   });
 }
 
-type MatchWithRelations = Awaited<ReturnType<typeof getMatches>>[number];
+// Pick distribution across ALL users (not just the signed-in one), per match.
+async function getPickDistribution(matchIds: string[]) {
+  const allPredictions = await prisma.knockoutPrediction.findMany({
+    where: { matchId: { in: matchIds } },
+    select: { matchId: true, predictedWinner: true },
+  });
 
-function MatchList({ matches }: { matches: MatchWithRelations[] }) {
+  const byMatch = new Map<string, Map<string, number>>();
+  for (const p of allPredictions) {
+    if (!p.predictedWinner) continue;
+    if (!byMatch.has(p.matchId)) byMatch.set(p.matchId, new Map());
+    const counts = byMatch.get(p.matchId)!;
+    counts.set(p.predictedWinner, (counts.get(p.predictedWinner) ?? 0) + 1);
+  }
+  return byMatch;
+}
+
+type MatchWithRelations = Awaited<ReturnType<typeof getMatches>>[number];
+type PickDistribution = Map<string, Map<string, number>>;
+
+function MatchList({
+  matches,
+  pickDistribution,
+}: {
+  matches: MatchWithRelations[];
+  pickDistribution: PickDistribution;
+}) {
   if (matches.length === 0) {
     return (
       <p className="text-center text-ink/40 py-12 text-sm">Nothing here yet.</p>
@@ -34,35 +61,55 @@ function MatchList({ matches }: { matches: MatchWithRelations[] }) {
   }
   return (
     <div className="space-y-3">
-      {matches.map((match) => (
-        <KnockoutMatchCard
-          key={match.id}
-          match={{
-            id: match.id,
-            kickoff: match.kickoff.toISOString(),
-            status: match.status,
-            homeScore: match.homeScore,
-            awayScore: match.awayScore,
-            winnerTeamId: match.winnerTeamId,
-            homeTeam: match.homeTeam
-              ? { id: match.homeTeam.id, name: match.homeTeam.name }
-              : null,
-            awayTeam: match.awayTeam
-              ? { id: match.awayTeam.id, name: match.awayTeam.name }
-              : null,
-          }}
-          existingPrediction={
-            match.knockoutPredictions[0]
-              ? {
-                  predictedWinner: match.knockoutPredictions[0].predictedWinner,
-                  homeScore: match.knockoutPredictions[0].homeScore,
-                  awayScore: match.knockoutPredictions[0].awayScore,
-                  pointsAwarded: match.knockoutPredictions[0].pointsAwarded,
-                }
-              : null
-          }
-        />
-      ))}
+      {matches.map((match) => {
+        const counts = pickDistribution.get(match.id);
+        const totalPicks = match._count.knockoutPredictions;
+        const homePct =
+          totalPicks > 0 && match.homeTeam
+            ? Math.round(
+                ((counts?.get(match.homeTeam.id) ?? 0) / totalPicks) * 100,
+              )
+            : null;
+        const awayPct =
+          totalPicks > 0 && match.awayTeam
+            ? Math.round(
+                ((counts?.get(match.awayTeam.id) ?? 0) / totalPicks) * 100,
+              )
+            : null;
+
+        return (
+          <KnockoutMatchCard
+            key={match.id}
+            match={{
+              id: match.id,
+              kickoff: match.kickoff.toISOString(),
+              status: match.status,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+              winnerTeamId: match.winnerTeamId,
+              homeTeam: match.homeTeam
+                ? { id: match.homeTeam.id, name: match.homeTeam.name }
+                : null,
+              awayTeam: match.awayTeam
+                ? { id: match.awayTeam.id, name: match.awayTeam.name }
+                : null,
+            }}
+            existingPrediction={
+              match.knockoutPredictions[0]
+                ? {
+                    predictedWinner:
+                      match.knockoutPredictions[0].predictedWinner,
+                    homeScore: match.knockoutPredictions[0].homeScore,
+                    awayScore: match.knockoutPredictions[0].awayScore,
+                    pointsAwarded: match.knockoutPredictions[0].pointsAwarded,
+                  }
+                : null
+            }
+            homePickPct={homePct}
+            awayPickPct={awayPct}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -97,6 +144,8 @@ export default async function KnockoutsPage() {
     byStage.get(m.stage)!.push(m);
   }
 
+  const pickDistribution = await getPickDistribution(matches.map((m) => m.id));
+
   const tabs = STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => {
     const stageMatches = byStage.get(stage)!;
     const upcoming = stageMatches.filter((m) => m.status !== "FINISHED");
@@ -111,8 +160,15 @@ export default async function KnockoutsPage() {
         <MatchTabs
           upcomingCount={upcoming.length}
           completedCount={completed.length}
-          upcoming={<MatchList matches={upcoming} />}
-          completed={<MatchList matches={completed} />}
+          upcoming={
+            <MatchList matches={upcoming} pickDistribution={pickDistribution} />
+          }
+          completed={
+            <MatchList
+              matches={completed}
+              pickDistribution={pickDistribution}
+            />
+          }
         />
       ),
     };

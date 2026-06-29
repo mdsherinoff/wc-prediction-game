@@ -26,9 +26,13 @@ type Prediction = {
 export default function KnockoutMatchCard({
   match,
   existingPrediction,
+  homePickPct,
+  awayPickPct,
 }: {
   match: Match;
   existingPrediction: Prediction;
+  homePickPct?: number | null;
+  awayPickPct?: number | null;
 }) {
   const [winner, setWinner] = useState<string | null>(
     existingPrediction?.predictedWinner ?? null,
@@ -224,6 +228,7 @@ export default function KnockoutMatchCard({
           const scoreValue = isHome ? home : away;
           const setScoreValue = isHome ? setHome : setAway;
           const isPicked = winner === team!.id;
+          const pct = isHome ? homePickPct : awayPickPct;
 
           return (
             <div key={team!.id} className="flex items-center gap-2">
@@ -236,8 +241,16 @@ export default function KnockoutMatchCard({
                     : "bg-transparent text-[var(--chalk)] border-[var(--board-divider)] hover:border-[var(--amber)]"
                 } disabled:opacity-60 disabled:cursor-not-allowed`}
               >
-                <span className="font-display text-sm font-bold truncate">
+                <span className="font-display text-sm font-bold truncate flex items-baseline gap-1.5">
                   {team!.name.toUpperCase()}
+                  {pct != null && (
+                    <span
+                      className="text-[10px] font-normal shrink-0"
+                      style={{ opacity: 0.75 }}
+                    >
+                      · {pct}%
+                    </span>
+                  )}
                 </span>
                 {isPicked && (
                   <span className="text-[10px] font-bold shrink-0">PICKED</span>
