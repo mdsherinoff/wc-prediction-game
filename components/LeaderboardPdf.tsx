@@ -14,12 +14,13 @@ const styles = StyleSheet.create({
     padding: 36,
     fontSize: 10,
     fontFamily: "Helvetica",
-    color: "#13261f",
+    color: "8A1538",
   },
   title: {
     fontSize: 20,
     fontFamily: "Helvetica-Bold",
     marginBottom: 4,
+    color: "8A1538"
   },
   meta: {
     fontSize: 9,
@@ -103,7 +104,7 @@ export default function LeaderboardPdf({
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>
-          World Cup 2026 Prediction Pool — Leaderboard
+          PSMO College Alumni Qatar - FIFA 26 Contest Leaderboard
         </Text>
         <Text style={styles.meta}>
           Generated {formatTimestamp(generatedAt)} · {rows.length} participant
