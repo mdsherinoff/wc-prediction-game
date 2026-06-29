@@ -7,6 +7,10 @@ import { Stage } from "@prisma/client";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import {
+  getPickDistribution,
+  computePickPercentages,
+} from "@/lib/pick-distribution";
 
 export const dynamic = "force-dynamic";
 
@@ -27,23 +31,6 @@ async function getMatches(userId: string) {
   });
 }
 
-// Pick distribution across ALL users (not just the signed-in one), per match.
-async function getPickDistribution(matchIds: string[]) {
-  const allPredictions = await prisma.knockoutPrediction.findMany({
-    where: { matchId: { in: matchIds } },
-    select: { matchId: true, predictedWinner: true },
-  });
-
-  const byMatch = new Map<string, Map<string, number>>();
-  for (const p of allPredictions) {
-    if (!p.predictedWinner) continue;
-    if (!byMatch.has(p.matchId)) byMatch.set(p.matchId, new Map());
-    const counts = byMatch.get(p.matchId)!;
-    counts.set(p.predictedWinner, (counts.get(p.predictedWinner) ?? 0) + 1);
-  }
-  return byMatch;
-}
-
 type MatchWithRelations = Awaited<ReturnType<typeof getMatches>>[number];
 type PickDistribution = Map<string, Map<string, number>>;
 
@@ -62,20 +49,12 @@ function MatchList({
   return (
     <div className="space-y-3">
       {matches.map((match) => {
-        const counts = pickDistribution.get(match.id);
-        const totalPicks = match._count.knockoutPredictions;
-        const homePct =
-          totalPicks > 0 && match.homeTeam
-            ? Math.round(
-                ((counts?.get(match.homeTeam.id) ?? 0) / totalPicks) * 100,
-              )
-            : null;
-        const awayPct =
-          totalPicks > 0 && match.awayTeam
-            ? Math.round(
-                ((counts?.get(match.awayTeam.id) ?? 0) / totalPicks) * 100,
-              )
-            : null;
+        const { homePct, awayPct } = computePickPercentages({
+          counts: pickDistribution.get(match.id),
+          totalPicks: match._count.knockoutPredictions,
+          homeTeamId: match.homeTeam?.id,
+          awayTeamId: match.awayTeam?.id,
+        });
 
         return (
           <KnockoutMatchCard
