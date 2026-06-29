@@ -265,15 +265,15 @@ export default function KnockoutMatchCard({
         })}
       </div>
 
-      {!disabled && (
-        <div className="flex justify-end mt-3 pt-2 border-t border-[var(--board-divider)]">
-          <Link
-            href={`/match/${match.id}`}
-            className="text-[11px] mr-auto self-center hover:text-[var(--amber)] transition"
-            style={{ color: "var(--board-text-muted)" }}
-          >
-            View match →
-          </Link>
+      <div className="flex justify-end items-center mt-3 pt-2 border-t border-[var(--board-divider)]">
+        <Link
+          href={`/match/${match.id}`}
+          className="text-[11px] mr-auto self-center hover:text-[var(--amber)] transition"
+          style={{ color: "var(--board-text-muted)" }}
+        >
+          View match →
+        </Link>
+        {!disabled && (
           <button
             onClick={save}
             disabled={saving}
@@ -281,8 +281,8 @@ export default function KnockoutMatchCard({
           >
             {saving ? "..." : saved ? "SAVED ✓" : "SAVE"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {match.status === "FINISHED" && (
         <div className="text-xs mt-3 font-semibold text-[var(--amber)]">
