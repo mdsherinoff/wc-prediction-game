@@ -14,13 +14,13 @@ const styles = StyleSheet.create({
     padding: 36,
     fontSize: 10,
     fontFamily: "Helvetica",
-    color: "8A1538",
+    color: "#8A1538",
   },
   title: {
     fontSize: 20,
     fontFamily: "Helvetica-Bold",
     marginBottom: 4,
-    color: "8A1538"
+    color: "#8A1538"
   },
   meta: {
     fontSize: 9,
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: "row",
-    backgroundColor: "#0b3d2e",
+    backgroundColor: "#8A1538",
     paddingVertical: 6,
     paddingHorizontal: 6,
   },
