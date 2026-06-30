@@ -99,10 +99,16 @@ export async function syncResultsFromFootballData() {
       }
 
       const status = mapStatus(fd.status);
-      const homeScore =
-        (fd.score.regularTime?.home ?? 0) + (fd.score.extraTime?.home ?? 0);
-      const awayScore =
-        (fd.score.regularTime?.away ?? 0) + (fd.score.extraTime?.away ?? 0);
+
+      // fullTime is the most reliably-populated score field for completed
+      // matches — regularTime/extraTime breakdowns are frequently missing
+      // or null for matches not synced live, and defaulting those to 0
+      // silently overwrote real historical scores with 0-0. Only use
+      // fullTime, and only write a score at all if it's genuinely present.
+      const hasScore =
+        fd.score.fullTime.home != null && fd.score.fullTime.away != null;
+      const homeScore = hasScore ? fd.score.fullTime.home : existing.homeScore;
+      const awayScore = hasScore ? fd.score.fullTime.away : existing.awayScore;
       const wentToPens =
         !!fd.score.penalties && fd.score.penalties.home !== null;
 
