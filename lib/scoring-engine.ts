@@ -10,7 +10,7 @@ import {
   getPointsConfig,
   knockoutWinnerPoints,
   knockoutExactBonusPoints,
-} from "@/lib/points-cofig";
+} from "@/lib/points-config";
 
 /**
  * Scans all FINISHED matches and awards points to any predictions/picks

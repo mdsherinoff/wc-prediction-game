@@ -39,13 +39,16 @@ export function roundLockTime(firstMatchKickoffInRound: Date): Date {
 export function scoreAwardPick(
   pickedPlayerId: string,
   actualWinnerPlayerId: string,
-  pointsForCorrect: number
+  pointsForCorrect: number,
 ): number {
   return pickedPlayerId === actualWinnerPlayerId ? pointsForCorrect : 0;
 }
 
 /** Award picks lock exactly at kickoff of the first Quarter-Final match — no buffer. */
-export function isAwardPicksLocked(firstQfKickoff: Date, now: Date = new Date()): boolean {
+export function isAwardPicksLocked(
+  firstQfKickoff: Date,
+  now: Date = new Date(),
+): boolean {
   return now.getTime() >= firstQfKickoff.getTime();
 }
 
@@ -56,11 +59,13 @@ export function scoreGroupPrediction(
   actualHome: number,
   actualAway: number,
   knownIncorrect: boolean,
-  pointsForExact: number
+  pointsForExact: number,
 ): number {
   if (knownIncorrect) return 0;
   if (predHome == null || predAway == null) return 0;
-  return predHome === actualHome && predAway === actualAway ? pointsForExact : 0;
+  return predHome === actualHome && predAway === actualAway
+    ? pointsForExact
+    : 0;
 }
 
 /**
@@ -91,17 +96,28 @@ export function scoreKnockoutPrediction(params: {
     pointsForExactBonus,
   } = params;
 
-  if (knownIncorrect || !predictedWinnerTeamId) return 0;
+  if (knownIncorrect) return 0;
+
+  const isDraw = actualHome === actualAway;
+  const exactScore =
+    predHome != null &&
+    predAway != null &&
+    predHome === actualHome &&
+    predAway === actualAway;
+
+  // Drew exactly on the scoreline but called the penalty-shootout winner
+  // wrong (or didn't guess one) — still reward the accurate scoreline read,
+  // but not the winner points, since the shootout call itself was wrong.
+  if (isDraw && exactScore && predictedWinnerTeamId !== actualWinnerTeamId) {
+    return pointsForExactBonus;
+  }
+
+  if (!predictedWinnerTeamId) return 0;
 
   let points = 0;
   if (predictedWinnerTeamId === actualWinnerTeamId) {
     points += pointsForWinner;
-    if (
-      predHome != null &&
-      predAway != null &&
-      predHome === actualHome &&
-      predAway === actualAway
-    ) {
+    if (exactScore) {
       points += pointsForExactBonus;
     }
   }
@@ -112,7 +128,7 @@ export function scoreKnockoutPrediction(params: {
 export function scoreBracketPick(
   pickedTeamId: string,
   actualWinnerTeamId: string,
-  pointsForCorrect: number
+  pointsForCorrect: number,
 ): number {
   return pickedTeamId === actualWinnerTeamId ? pointsForCorrect : 0;
 }
