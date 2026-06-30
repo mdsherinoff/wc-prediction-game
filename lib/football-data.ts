@@ -9,16 +9,41 @@ const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
 type FdMatch = {
   id: number;
   utcDate: string;
-  status: "SCHEDULED" | "TIMED" | "IN_PLAY" | "PAUSED" | "FINISHED" | "POSTPONED" | "SUSPENDED" | "CANCELLED";
+  status:
+    | "SCHEDULED"
+    | "TIMED"
+    | "IN_PLAY"
+    | "PAUSED"
+    | "FINISHED"
+    | "POSTPONED"
+    | "SUSPENDED"
+    | "CANCELLED";
   stage: string;
   group: string | null;
   homeTeam: { name: string; tla: string | null; shortName: string | null };
   awayTeam: { name: string; tla: string | null; shortName: string | null };
   score: {
     winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
-    fullTime: { home: number | null; away: number | null };
-    extraTime?: { home: number | null; away: number | null };
-    penalties?: { home: number | null; away: number | null };
+
+    regularTime?: {
+      home: number | null;
+      away: number | null;
+    };
+
+    fullTime: {
+      home: number | null;
+      away: number | null;
+    };
+
+    extraTime?: {
+      home: number | null;
+      away: number | null;
+    };
+
+    penalties?: {
+      home: number | null;
+      away: number | null;
+    };
   };
 };
 
@@ -41,7 +66,9 @@ async function fetchWorldCupMatches(): Promise<FdMatch[]> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`football-data.org request failed (${res.status}): ${text}`);
+    throw new Error(
+      `football-data.org request failed (${res.status}): ${text}`,
+    );
   }
 
   const data = await res.json();
@@ -72,9 +99,12 @@ export async function syncResultsFromFootballData() {
       }
 
       const status = mapStatus(fd.status);
-      const homeScore = fd.score.fullTime.home ?? fd.score.extraTime?.home ?? null;
-      const awayScore = fd.score.fullTime.away ?? fd.score.extraTime?.away ?? null;
-      const wentToPens = !!fd.score.penalties && fd.score.penalties.home !== null;
+      const homeScore =
+        (fd.score.regularTime?.home ?? 0) + (fd.score.extraTime?.home ?? 0);
+      const awayScore =
+        (fd.score.regularTime?.away ?? 0) + (fd.score.extraTime?.away ?? 0);
+      const wentToPens =
+        !!fd.score.penalties && fd.score.penalties.home !== null;
 
       let winnerTeamId: string | null = existing.winnerTeamId;
       if (status === MatchStatus.FINISHED) {
