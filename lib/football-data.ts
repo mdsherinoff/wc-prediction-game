@@ -100,15 +100,22 @@ export async function syncResultsFromFootballData() {
 
       const status = mapStatus(fd.status);
 
-      // fullTime is the most reliably-populated score field for completed
-      // matches — regularTime/extraTime breakdowns are frequently missing
-      // or null for matches not synced live, and defaulting those to 0
-      // silently overwrote real historical scores with 0-0. Only use
-      // fullTime, and only write a score at all if it's genuinely present.
-      const hasScore =
-        fd.score.fullTime.home != null && fd.score.fullTime.away != null;
-      const homeScore = hasScore ? fd.score.fullTime.home : existing.homeScore;
-      const awayScore = hasScore ? fd.score.fullTime.away : existing.awayScore;
+      // IMPORTANT: football-data.org's own docs confirm fullTime represents
+      // the score "after a penalty shootout" — i.e. it can include penalty
+      // goals added on top of regulation/extra time for matches decided on
+      // pens. regularTime is the correct field for the 90(+30)-minute score
+      // we actually want to store, excluding penalties. But regularTime is
+      // not always populated, so: prefer regularTime, and only ever fall
+      // back to the EXISTING database value (never a bare 0) if it's missing.
+      const hasRegularTime =
+        fd.score.regularTime?.home != null &&
+        fd.score.regularTime?.away != null;
+      const homeScore = hasRegularTime
+        ? fd.score.regularTime!.home
+        : existing.homeScore;
+      const awayScore = hasRegularTime
+        ? fd.score.regularTime!.away
+        : existing.awayScore;
       const wentToPens =
         !!fd.score.penalties && fd.score.penalties.home !== null;
 
