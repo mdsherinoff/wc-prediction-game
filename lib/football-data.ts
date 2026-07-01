@@ -24,8 +24,14 @@ type FdMatch = {
   awayTeam: { name: string; tla: string | null; shortName: string | null };
   score: {
     winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
+    duration: "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT" | null;
 
     regularTime?: {
+      home: number | null;
+      away: number | null;
+    };
+
+    halfTime?: {
       home: number | null;
       away: number | null;
     };
@@ -100,24 +106,44 @@ export async function syncResultsFromFootballData() {
 
       const status = mapStatus(fd.status);
 
-      // IMPORTANT: football-data.org's own docs confirm fullTime represents
-      // the score "after a penalty shootout" — i.e. it can include penalty
-      // goals added on top of regulation/extra time for matches decided on
-      // pens. regularTime is the correct field for the 90(+30)-minute score
-      // we actually want to store, excluding penalties. But regularTime is
-      // not always populated, so: prefer regularTime, and only ever fall
-      // back to the EXISTING database value (never a bare 0) if it's missing.
-      const hasRegularTime =
-        fd.score.regularTime?.home != null &&
-        fd.score.regularTime?.away != null;
-      const homeScore = hasRegularTime
-        ? fd.score.regularTime!.home
-        : existing.homeScore;
-      const awayScore = hasRegularTime
-        ? fd.score.regularTime!.away
-        : existing.awayScore;
-      const wentToPens =
-        !!fd.score.penalties && fd.score.penalties.home !== null;
+      // Branch on duration to pick the right score fields per match type:
+      //
+      // REGULAR: ended at 90 min — fullTime is the real score, regularTime
+      //   is absent from the response entirely.
+      //
+      // EXTRA_TIME: went to extra time but no penalties — fullTime is safe
+      //   to use here too since there are no penalty goals to pollute it.
+      //   regularTime + extraTime would also work but fullTime is simpler.
+      //
+      // PENALTY_SHOOTOUT: fullTime includes penalty goals (confirmed from
+      //   API docs and real match data), so we must use regularTime instead,
+      //   which the API always provides for these matches.
+      //
+      // In all cases: only write the score if we have real data.
+      // Never fall back to 0 — fall back to the existing DB value instead,
+      // so a temporarily missing API response never corrupts stored scores.
+      const duration = fd.score.duration;
+      const wentToPens = duration === "PENALTY_SHOOTOUT";
+
+      let homeScore: number | null = existing.homeScore;
+      let awayScore: number | null = existing.awayScore;
+
+      if (duration === "REGULAR" || duration === "EXTRA_TIME") {
+        if (fd.score.fullTime.home != null && fd.score.fullTime.away != null) {
+          homeScore = fd.score.fullTime.home;
+          awayScore = fd.score.fullTime.away;
+        }
+      } else if (duration === "PENALTY_SHOOTOUT") {
+        if (
+          fd.score.regularTime?.home != null &&
+          fd.score.regularTime?.away != null
+        ) {
+          homeScore = fd.score.regularTime.home;
+          awayScore = fd.score.regularTime.away;
+        }
+      }
+      // If duration is null (match not started/in progress), we fall through
+      // with existing values — no write needed for score fields.
 
       let winnerTeamId: string | null = existing.winnerTeamId;
       if (status === MatchStatus.FINISHED) {
