@@ -155,18 +155,10 @@ export default async function KnockoutsPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-1">
+      <div className="mb-1">
         <h1 className="font-display text-3xl font-700 text-pitch">
           Knockout predictions
         </h1>
-        {bracketUnlocked && (
-          <Link
-            href="/knockouts/bracket"
-            className="text-sm bg-amber text-ink px-3 py-1.5 rounded font-semibold hover:brightness-95"
-          >
-            Fill in your bracket →
-          </Link>
-        )}
       </div>
       <p className="text-sm text-ink/60 mb-6">
         Pick the winner for 1 point, plus 2 bonus points if you also call the
