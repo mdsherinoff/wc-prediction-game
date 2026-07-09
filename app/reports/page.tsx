@@ -1,12 +1,15 @@
-import { requireAdmin } from "@/lib/admin";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getReportsData } from "@/lib/reports";
 import LeaderboardBarChart from "@/components/LeaderboardBarChart";
 import RadialPercentChart from "@/components/RadialPercentChart";
+import RankedBarList from "@/components/RankedBarList";
 
-export default async function AdminReportsPage() {
-  const session = await requireAdmin();
-  if (!session) {
+export const dynamic = "force-dynamic";
+
+export default async function ReportsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
     redirect("/login");
   }
 
@@ -43,7 +46,7 @@ export default async function AdminReportsPage() {
         </div>
       </section>
 
-      <section className="mb-10">
+      <section className="mb-6">
         <div className="ticket p-5">
           <RadialPercentChart
             data={data.participation}
@@ -53,6 +56,74 @@ export default async function AdminReportsPage() {
             subtitle="SHARE OF MATCHES EACH PERSON ACTUALLY PREDICTED"
           />
         </div>
+      </section>
+
+      <section className="mb-6 grid md:grid-cols-2 gap-6">
+        <div className="ticket p-5">
+          <RankedBarList
+            data={data.sharpestPredictors}
+            color="#1f6e4a"
+            title="SHARPEST EYE"
+            subtitle="MOST CORRECT PREDICTIONS"
+            emptyLabel="No correct predictions scored yet."
+          />
+        </div>
+        <div className="ticket p-5">
+          <RankedBarList
+            data={data.popularScorelines}
+            color="#0b3d2e"
+            title="CROWD SCORELINES"
+            subtitle="MOST-PREDICTED GROUP SCORELINES"
+            emptyLabel="No group scorelines predicted yet."
+          />
+        </div>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="font-display text-xl font-700 text-turf mb-3">
+          Crowd&apos;s award favorites
+        </h2>
+        {data.awardFavorites.length === 0 ? (
+          <p className="text-sm text-ink/40">No award picks submitted yet.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {data.awardFavorites.map((fav) => (
+              <FunFactCard
+                key={fav.category}
+                icon={<StarIcon />}
+                label={fav.label.toUpperCase()}
+                content={
+                  <>
+                    <div className="font-display font-700 text-lg text-chalk mb-1.5">
+                      {fav.playerName}
+                    </div>
+                    <div
+                      className="font-display text-[30px] leading-none flex items-baseline gap-2"
+                      style={{
+                        fontFamily:
+                          "'DSEG7 Classic', 'Barlow Condensed', monospace",
+                        color: "#e8a33d",
+                      }}
+                    >
+                      {fav.pickCount}
+                      <span
+                        className="text-xs font-normal"
+                        style={{
+                          fontFamily: "Inter, sans-serif",
+                          color: "rgba(245,243,236,0.55)",
+                        }}
+                      >
+                        {fav.pickCount === 1 ? "person · " : "people · "}
+                        {fav.country}
+                      </span>
+                    </div>
+                  </>
+                }
+                empty=""
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section>
@@ -129,8 +200,56 @@ export default async function AdminReportsPage() {
               )
             }
           />
+
+          <FunFactCard
+            icon={<GoalIcon />}
+            label="GOALS: CROWD vs REALITY"
+            empty="No group predictions yet."
+            content={
+              data.goalsPredictedAvg != null && (
+                <div className="flex gap-8">
+                  <GoalStat
+                    value={data.goalsPredictedAvg}
+                    caption="predicted / game"
+                  />
+                  <GoalStat
+                    value={data.goalsActualAvg}
+                    caption="actual / game"
+                  />
+                </div>
+              )
+            }
+          />
         </div>
       </section>
+    </div>
+  );
+}
+
+function GoalStat({
+  value,
+  caption,
+}: {
+  value: number | null;
+  caption: string;
+}) {
+  return (
+    <div>
+      <div
+        className="font-display text-[30px] leading-none"
+        style={{
+          fontFamily: "'DSEG7 Classic', 'Barlow Condensed', monospace",
+          color: "#e8a33d",
+        }}
+      >
+        {value != null ? value.toFixed(1) : "—"}
+      </div>
+      <div
+        className="text-xs font-normal mt-1"
+        style={{ color: "rgba(245,243,236,0.55)" }}
+      >
+        {caption}
+      </div>
     </div>
   );
 }
@@ -193,6 +312,42 @@ function TrophyIcon() {
       <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
       <path d="M7 5H5a2 2 0 0 0-2 2v1a4 4 0 0 0 4 4" />
       <path d="M17 5h2a2 2 0 0 1 2 2v1a4 4 0 0 1-4 4" />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  );
+}
+
+function GoalIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m12 7 2.5 1.8-1 3h-3l-1-3L12 7z" />
+      <path d="M12 7V2.5M9.5 11.8 5.8 9.2M14.5 11.8l3.7-2.6M10.5 14.8 8 19M13.5 14.8 16 19" />
     </svg>
   );
 }

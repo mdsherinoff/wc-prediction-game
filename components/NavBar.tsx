@@ -17,6 +17,7 @@ const LINKS = [
   { href: "/awards", label: "Awards" },
   { href: "/results", label: "Results" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/reports", label: "Reports" },
 ];
 
 export default function NavBar({ user }: { user: NavUser }) {
