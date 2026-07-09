@@ -2,7 +2,6 @@ import { requireAdmin } from "@/lib/admin";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import AdminSyncButton from "@/components/AdminSyncButton";
-import AdminMatchRow from "@/components/AdminMatchRow";
 import AdminAdjustmentRow from "@/components/AdminAdjustmentRow";
 import Link from "next/link";
 
@@ -11,12 +10,6 @@ export default async function AdminPage() {
   if (!session) {
     redirect("/login");
   }
-
-  const matches = await prisma.match.findMany({
-    include: { homeTeam: true, awayTeam: true },
-    orderBy: { kickoff: "asc" },
-    take: 30,
-  });
 
   const setting = await prisma.setting.findUnique({
     where: { key: "bracket_unlocked" },
@@ -37,6 +30,12 @@ export default async function AdminPage() {
             className="text-sm bg-amber text-ink px-3 py-1.5 rounded font-semibold hover:brightness-110"
           >
             Points config →
+          </Link>
+          <Link
+            href="/admin/matches"
+            className="text-sm bg-pitch text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110"
+          >
+            Manual result entry →
           </Link>
           <Link
             href="/admin/match-predictions"
@@ -116,31 +115,15 @@ export default async function AdminPage() {
         Manual result entry (fallback)
       </h2>
       <p className="text-xs text-ink/50 mb-4">
-        Use this if the automatic sync is delayed or wrong for a specific match.
-        Showing next 30 matches by kickoff.
+        Set or correct any match&apos;s score when the automatic sync is
+        delayed or wrong. Now on its own page, split into tabs per round.
       </p>
-
-      <div className="space-y-2">
-        {matches.map((m) => (
-          <AdminMatchRow
-            key={m.id}
-            match={{
-              id: m.id,
-              stage: m.stage,
-              kickoff: m.kickoff.toISOString(),
-              status: m.status,
-              homeScore: m.homeScore,
-              awayScore: m.awayScore,
-              homeTeam: m.homeTeam
-                ? { id: m.homeTeam.id, name: m.homeTeam.name }
-                : null,
-              awayTeam: m.awayTeam
-                ? { id: m.awayTeam.id, name: m.awayTeam.name }
-                : null,
-            }}
-          />
-        ))}
-      </div>
+      <Link
+        href="/admin/matches"
+        className="inline-block text-sm bg-pitch text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110"
+      >
+        Open manual result entry →
+      </Link>
     </div>
   );
 }
