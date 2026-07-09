@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { syncResultsFromFootballData } from "@/lib/football-data";
-import { scoreFinishedMatches, maybeUnlockBracket } from "@/lib/scoring-engine";
+import {
+  scoreFinishedMatches,
+  maybeUnlockBracket,
+  resetMatchScoring,
+} from "@/lib/scoring-engine";
 
 /**
  * POST /api/admin/sync-results
@@ -37,6 +41,15 @@ async function runSync(req: NextRequest) {
 
   try {
     const syncResult = await syncResultsFromFootballData();
+
+    // For any match whose result actually changed, clear its already-awarded
+    // points so the scoring pass below recomputes them. Newly-finished matches
+    // are unaffected (they were never scored), so this only re-grades genuine
+    // corrections without disturbing everything else.
+    for (const { id, slotKey } of syncResult.resultChanged) {
+      await resetMatchScoring(id, slotKey);
+    }
+
     const scoreResult = await scoreFinishedMatches();
     const bracketJustUnlocked = await maybeUnlockBracket();
 

@@ -12,6 +12,17 @@ import {
   knockoutExactBonusPoints,
 } from "@/lib/points-config";
 
+/** Appends an id to the list keyed by the points it earned. */
+function bucketByPoints(
+  buckets: Map<number, string[]>,
+  points: number,
+  id: string,
+) {
+  const existing = buckets.get(points);
+  if (existing) existing.push(id);
+  else buckets.set(points, [id]);
+}
+
 /**
  * Scans all FINISHED matches and awards points to any predictions/picks
  * that haven't been scored yet (scoredAt is null). Safe to run repeatedly —
@@ -32,6 +43,8 @@ export async function scoreFinishedMatches() {
   let knockoutScored = 0;
   let bracketScored = 0;
 
+  const now = new Date();
+
   for (const match of finishedMatches) {
     if (match.homeScore == null || match.awayScore == null) continue;
 
@@ -39,6 +52,9 @@ export async function scoreFinishedMatches() {
       const predictions = await prisma.groupPrediction.findMany({
         where: { matchId: match.id, scoredAt: null },
       });
+      // Group ids by the point value they earn, then write each group in a
+      // single updateMany instead of one round-trip per prediction.
+      const idsByPoints = new Map<number, string[]>();
       for (const p of predictions) {
         const points = scoreGroupPrediction(
           p.homeScore,
@@ -48,11 +64,14 @@ export async function scoreFinishedMatches() {
           p.knownIncorrect,
           config.GROUP_EXACT,
         );
-        await prisma.groupPrediction.update({
-          where: { id: p.id },
-          data: { pointsAwarded: points, scoredAt: new Date() },
+        bucketByPoints(idsByPoints, points, p.id);
+      }
+      for (const [points, ids] of idsByPoints) {
+        await prisma.groupPrediction.updateMany({
+          where: { id: { in: ids } },
+          data: { pointsAwarded: points, scoredAt: now },
         });
-        groupScored++;
+        groupScored += ids.length;
       }
     } else {
       // Knockout match — needs a determined winner to score.
@@ -61,6 +80,7 @@ export async function scoreFinishedMatches() {
       const predictions = await prisma.knockoutPrediction.findMany({
         where: { matchId: match.id, scoredAt: null },
       });
+      const idsByPoints = new Map<number, string[]>();
       for (const p of predictions) {
         const points = scoreKnockoutPrediction({
           predictedWinnerTeamId: p.predictedWinner,
@@ -73,11 +93,14 @@ export async function scoreFinishedMatches() {
           pointsForWinner: knockoutWinnerPoints(config, match.stage),
           pointsForExactBonus: knockoutExactBonusPoints(config, match.stage),
         });
-        await prisma.knockoutPrediction.update({
-          where: { id: p.id },
-          data: { pointsAwarded: points, scoredAt: new Date() },
+        bucketByPoints(idsByPoints, points, p.id);
+      }
+      for (const [points, ids] of idsByPoints) {
+        await prisma.knockoutPrediction.updateMany({
+          where: { id: { in: ids } },
+          data: { pointsAwarded: points, scoredAt: now },
         });
-        knockoutScored++;
+        knockoutScored += ids.length;
       }
 
       // Bracket picks reference this match via slotKey, if set.
@@ -85,23 +108,51 @@ export async function scoreFinishedMatches() {
         const picks = await prisma.bracketPick.findMany({
           where: { slotKey: match.slotKey, scoredAt: null },
         });
+        const bracketIdsByPoints = new Map<number, string[]>();
         for (const pick of picks) {
           const points = scoreBracketPick(
             pick.teamId,
             match.winnerTeamId,
             config.BRACKET_ADVANCER,
           );
-          await prisma.bracketPick.update({
-            where: { id: pick.id },
-            data: { pointsAwarded: points, scoredAt: new Date() },
+          bucketByPoints(bracketIdsByPoints, points, pick.id);
+        }
+        for (const [points, ids] of bracketIdsByPoints) {
+          await prisma.bracketPick.updateMany({
+            where: { id: { in: ids } },
+            data: { pointsAwarded: points, scoredAt: now },
           });
-          bracketScored++;
+          bracketScored += ids.length;
         }
       }
     }
   }
 
   return { groupScored, knockoutScored, bracketScored };
+}
+
+/**
+ * Clears the recorded score for a single match so its predictions and bracket
+ * picks get re-graded on the next scoreFinishedMatches() run. Call this when a
+ * match's result is corrected after it was already scored (e.g. an admin fixes
+ * a wrong score, or a synced result changes) — otherwise the stale points stay
+ * because scoreFinishedMatches only touches rows where scoredAt is null.
+ */
+export async function resetMatchScoring(matchId: string, slotKey: string | null) {
+  await prisma.groupPrediction.updateMany({
+    where: { matchId },
+    data: { pointsAwarded: null, scoredAt: null },
+  });
+  await prisma.knockoutPrediction.updateMany({
+    where: { matchId },
+    data: { pointsAwarded: null, scoredAt: null },
+  });
+  if (slotKey) {
+    await prisma.bracketPick.updateMany({
+      where: { slotKey },
+      data: { pointsAwarded: null, scoredAt: null },
+    });
+  }
 }
 
 /**
@@ -129,21 +180,27 @@ export async function scoreAwardPicks() {
   const winners = await prisma.awardWinner.findMany();
   let scored = 0;
 
+  const now = new Date();
+
   for (const winner of winners) {
     const picks = await prisma.awardPick.findMany({
       where: { category: winner.category, scoredAt: null },
     });
+    const idsByPoints = new Map<number, string[]>();
     for (const pick of picks) {
       const points = scoreAwardPick(
         pick.playerId,
         winner.playerId,
         config.AWARD_PICK,
       );
-      await prisma.awardPick.update({
-        where: { id: pick.id },
-        data: { pointsAwarded: points, scoredAt: new Date() },
+      bucketByPoints(idsByPoints, points, pick.id);
+    }
+    for (const [points, ids] of idsByPoints) {
+      await prisma.awardPick.updateMany({
+        where: { id: { in: ids } },
+        data: { pointsAwarded: points, scoredAt: now },
       });
-      scored++;
+      scored += ids.length;
     }
   }
 

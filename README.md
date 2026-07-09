@@ -150,8 +150,8 @@ winner.
 
 ## Locking rules
 
-- Every match's prediction locks 1 hour before kickoff.
-- Bracket picks for an entire round (e.g. all of Round of 16) lock 1 hour
+- Every match's prediction locks 1 minute before kickoff.
+- Bracket picks for an entire round (e.g. all of Round of 16) lock 1 minute
   before the first match of that round kicks off - so you can't wait to see
   early results before locking in picks for later matches in the same round.
 

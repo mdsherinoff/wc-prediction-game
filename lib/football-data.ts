@@ -94,6 +94,10 @@ export async function syncResultsFromFootballData() {
   const updated: string[] = [];
   const skipped: string[] = [];
   const errors: { externalId: string; error: string }[] = [];
+  // Matches whose graded result (score or winner) actually changed this sync.
+  // The caller uses these to re-score predictions that were already scored
+  // under an out-of-date result.
+  const resultChanged: { id: string; slotKey: string | null }[] = [];
 
   for (const fd of fdMatches) {
     const externalId = String(fd.id);
@@ -159,6 +163,11 @@ export async function syncResultsFromFootballData() {
         }
       }
 
+      const gradedResultChanged =
+        existing.homeScore !== homeScore ||
+        existing.awayScore !== awayScore ||
+        existing.winnerTeamId !== winnerTeamId;
+
       await prisma.match.update({
         where: { id: existing.id },
         data: {
@@ -173,6 +182,9 @@ export async function syncResultsFromFootballData() {
       });
 
       updated.push(existing.id);
+      if (gradedResultChanged) {
+        resultChanged.push({ id: existing.id, slotKey: existing.slotKey });
+      }
     } catch (err) {
       console.error(`Failed to sync match ${externalId}:`, err);
       errors.push({
@@ -185,6 +197,7 @@ export async function syncResultsFromFootballData() {
   return {
     updatedCount: updated.length,
     updatedMatchIds: updated,
+    resultChanged,
     skippedExternalIds: skipped,
     errors,
   };

@@ -148,6 +148,7 @@ model GroupPrediction {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, matchId])
+  @@index([matchId])
 }
 
 model KnockoutPrediction {
@@ -170,6 +171,7 @@ model KnockoutPrediction {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, matchId])
+  @@index([matchId])
 }
 
 model BracketPick {
@@ -189,6 +191,7 @@ model BracketPick {
 
   @@unique([userId, slotKey])
   @@index([stage])
+  @@index([slotKey])
 }
 
 // Simple global setting flags, e.g. whether knockout bracket stage has unlocked.

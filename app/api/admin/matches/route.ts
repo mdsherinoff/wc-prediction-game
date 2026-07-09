@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { scoreFinishedMatches, maybeUnlockBracket } from "@/lib/scoring-engine";
+import {
+  scoreFinishedMatches,
+  maybeUnlockBracket,
+  resetMatchScoring,
+} from "@/lib/scoring-engine";
 import { MatchStatus } from "@prisma/client";
 
 /**
@@ -75,6 +79,18 @@ export async function PATCH(req: NextRequest) {
       winnerTeamId: resolvedWinner,
     },
   });
+
+  // If the graded result changed, clear any points already awarded for this
+  // match so they get recomputed below. Without this, a correction to an
+  // already-scored match would leave the old (wrong) points in place, since
+  // scoreFinishedMatches only touches rows that were never scored.
+  const gradedResultChanged =
+    match.homeScore !== homeScore ||
+    match.awayScore !== awayScore ||
+    match.winnerTeamId !== resolvedWinner;
+  if (gradedResultChanged) {
+    await resetMatchScoring(matchId, match.slotKey);
+  }
 
   const scoreResult = await scoreFinishedMatches();
   const bracketJustUnlocked = await maybeUnlockBracket();
