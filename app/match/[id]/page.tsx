@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { stageLabel } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
@@ -73,12 +73,12 @@ export default async function MatchDetailPage({
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <Link
-        href="/groups"
+      <BackButton
+        fallbackHref={match.stage === "GROUP" ? "/groups" : "/knockouts"}
         className="text-sm text-[var(--amber)] hover:underline mb-4 inline-block"
       >
         ← Back
-      </Link>
+      </BackButton>
 
       <div
         className="text-[11px] tracking-wide mb-1"
