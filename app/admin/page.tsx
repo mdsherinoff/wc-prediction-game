@@ -56,6 +56,12 @@ export default async function AdminPage() {
           >
             View reports →
           </Link>
+          <Link
+            href="/admin/awards"
+            className="text-sm bg-amber text-ink px-3 py-1.5 rounded font-semibold hover:brightness-110"
+          >
+            Set award winners →
+          </Link>
           <a
             href="/api/admin/award-picks/pdf"
             className="text-sm bg-ink text-chalk px-3 py-1.5 rounded font-semibold hover:brightness-110"

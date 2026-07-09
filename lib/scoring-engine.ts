@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { MatchStatus, Stage } from "@prisma/client";
+import { AwardCategory, MatchStatus, Stage } from "@prisma/client";
 import {
   scoreGroupPrediction,
   scoreKnockoutPrediction,
@@ -205,4 +205,18 @@ export async function scoreAwardPicks() {
   }
 
   return { scored };
+}
+
+/**
+ * Clears the recorded score for every pick in one award category so they get
+ * re-graded on the next scoreAwardPicks() run. Call this when an admin sets or
+ * changes the real winner of a category — otherwise already-scored picks keep
+ * their stale points, since scoreAwardPicks only touches rows where scoredAt
+ * is null.
+ */
+export async function resetAwardCategoryScoring(category: AwardCategory) {
+  await prisma.awardPick.updateMany({
+    where: { category },
+    data: { pointsAwarded: null, scoredAt: null },
+  });
 }
