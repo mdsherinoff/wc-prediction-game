@@ -55,8 +55,10 @@ export default async function MatchDetailPage({
     include: {
       homeTeam: true,
       awayTeam: true,
-      groupPredictions: { include: { user: true } },
-      knockoutPredictions: { include: { user: true } },
+      // Only pull the predictor's name — never their email/other PII into a
+      // page any pool member can open.
+      groupPredictions: { include: { user: { select: { name: true } } } },
+      knockoutPredictions: { include: { user: { select: { name: true } } } },
     },
   });
 

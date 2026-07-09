@@ -21,7 +21,13 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <div className="min-h-screen flex flex-col">
-          <NavBar user={session?.user ?? null} />
+          <NavBar
+            user={
+              session?.user
+                ? { name: session.user.name, image: session.user.image }
+                : null
+            }
+          />
           <main className="flex-1">{children}</main>
           <footer className="border-t border-line py-6 text-center text-xs text-ink/50">
             Friends prediction pool · World Cup 2026

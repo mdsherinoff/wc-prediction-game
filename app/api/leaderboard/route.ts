@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+  // /api is outside the middleware matcher, so guard here — don't expose the
+  // pool's standings to unauthenticated callers.
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+
   const users = await prisma.user.findMany({
     select: {
       id: true,

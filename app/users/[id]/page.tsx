@@ -29,7 +29,12 @@ export default async function UserStatsPage({
 
   const user = await prisma.user.findUnique({
     where: { id },
-    include: {
+    // Explicit select (not include) so scalar PII like email is never even
+    // fetched for this member-viewable profile page — only name/image/id.
+    select: {
+      id: true,
+      name: true,
+      image: true,
       groupPredictions: {
         include: { match: { include: { homeTeam: true, awayTeam: true } } },
         orderBy: { match: { kickoff: "desc" } },
@@ -116,7 +121,7 @@ export default async function UserStatsPage({
         {user.image && (
           <img
             src={user.image}
-            alt={user.name ?? ""}
+            alt={user.name ?? "Anonymous"}
             width={48}
             height={48}
             className="rounded-full"
@@ -124,7 +129,7 @@ export default async function UserStatsPage({
         )}
         <div>
           <h1 className="font-display text-2xl font-bold text-[var(--pitch)]">
-            {user.name ?? user.email}
+            {user.name ?? "Anonymous"}
           </h1>
           <p className="text-sm" style={{ color: "var(--board-text-muted)" }}>
             Rank #{rank} of {totals.length}

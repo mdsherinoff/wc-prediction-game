@@ -7,7 +7,6 @@ import MobileNavToggle from "@/components/MobileNavToggle";
 
 type NavUser = {
   name?: string | null;
-  email?: string | null;
   image?: string | null;
 } | null;
 
