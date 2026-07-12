@@ -45,12 +45,18 @@ export type ReportsData = {
   sharpestPredictors: RankedDatum[];
   popularScorelines: RankedDatum[];
   awardFavorites: AwardFavorite[];
-  boldestPredictor: { name: string; totalGoalsPredicted: number } | null;
-  mostPopularChampionPick: { teamName: string; pickCount: number } | null;
+  inSyncPair: { nameA: string; nameB: string; count: number } | null;
+  drawSpecialist: { name: string; draws: number; pct: number } | null;
+  earliestBird: { name: string; avgLeadHours: number } | null;
+  goalMachine: { name: string; avgGoals: number } | null;
+  mostCautious: { name: string; avgGoals: number } | null;
   goalsPredictedAvg: number | null;
   goalsActualAvg: number | null;
   totalFinishedMatches: number;
 };
+
+// Minimum predictions before a per-person "average"-style award is meaningful.
+const MIN_PREDICTIONS_TO_QUALIFY = 3;
 
 const AWARD_LABELS: Record<string, string> = {
   GOLDEN_BALL: "Golden Ball",
@@ -75,9 +81,18 @@ export async function getReportsData(): Promise<ReportsData> {
           homeScore: true,
           awayScore: true,
           knownIncorrect: true,
+          matchId: true,
+          createdAt: true,
+          match: { select: { kickoff: true } },
         },
       },
-      knockoutPredictions: { select: { pointsAwarded: true } },
+      knockoutPredictions: {
+        select: {
+          pointsAwarded: true,
+          createdAt: true,
+          match: { select: { kickoff: true } },
+        },
+      },
       bracketPicks: {
         select: {
           pointsAwarded: true,
@@ -96,7 +111,6 @@ export async function getReportsData(): Promise<ReportsData> {
     totalFinishedMatches,
     finishedGroupMatches,
     awardPicks,
-    finalPicks,
   ] = await Promise.all([
     prisma.match.count({ where: { stage: "GROUP" } }),
     prisma.match.count({ where: { stage: { not: "GROUP" } } }),
@@ -107,10 +121,6 @@ export async function getReportsData(): Promise<ReportsData> {
     }),
     prisma.awardPick.findMany({
       include: { player: { select: { name: true, country: true } } },
-    }),
-    prisma.bracketPick.findMany({
-      where: { slotKey: "FINAL" },
-      select: { teamId: true },
     }),
   ]);
 
@@ -194,7 +204,12 @@ export async function getReportsData(): Promise<ReportsData> {
     for (const p of u.groupPredictions) {
       if (p.knownIncorrect || p.homeScore == null || p.awayScore == null)
         continue;
-      const key = `${p.homeScore}-${p.awayScore}`;
+      // Which team is "home" is arbitrary across the whole pool, so treat a
+      // scoreline and its mirror as one bucket (2-1 == 1-2, 3-0 == 0-3) by
+      // always listing the higher score first.
+      const hi = Math.max(p.homeScore, p.awayScore);
+      const lo = Math.min(p.homeScore, p.awayScore);
+      const key = `${hi}-${lo}`;
       scorelineCounts.set(key, (scorelineCounts.get(key) ?? 0) + 1);
       scorelinePredictionTotal++;
       goalsPredictedTotal += p.homeScore + p.awayScore;
@@ -243,19 +258,89 @@ export async function getReportsData(): Promise<ReportsData> {
     });
   }
 
-  // Boldest predictor — most total goals predicted across their group picks.
-  let boldestPredictor: ReportsData["boldestPredictor"] = null;
-  let maxGoals = -1;
+  // Per-person goal averages (group predictions only, min N to qualify) — the
+  // Goal Machine (highest) and Most Cautious (lowest).
+  let goalMachine: ReportsData["goalMachine"] = null;
+  let mostCautious: ReportsData["mostCautious"] = null;
+  // Draw Specialist — who predicts the most drawn scorelines.
+  let drawSpecialist: ReportsData["drawSpecialist"] = null;
+  // Early Bird — who submits earliest before kickoff on average.
+  let earliestBird: ReportsData["earliestBird"] = null;
+
   for (const u of users) {
-    const goals = sum(
-      u.groupPredictions.flatMap((p) => [p.homeScore, p.awayScore]),
+    const name = displayName(u.name);
+    const valid = u.groupPredictions.filter(
+      (p) => !p.knownIncorrect && p.homeScore != null && p.awayScore != null,
     );
-    if (u.groupPredictions.length > 0 && goals > maxGoals) {
-      maxGoals = goals;
-      boldestPredictor = {
-        name: displayName(u.name),
-        totalGoalsPredicted: goals,
-      };
+
+    if (valid.length >= MIN_PREDICTIONS_TO_QUALIFY) {
+      const avgGoals = round1(
+        valid.reduce((acc, p) => acc + p.homeScore! + p.awayScore!, 0) /
+          valid.length,
+      );
+      if (!goalMachine || avgGoals > goalMachine.avgGoals) {
+        goalMachine = { name, avgGoals };
+      }
+      if (!mostCautious || avgGoals < mostCautious.avgGoals) {
+        mostCautious = { name, avgGoals };
+      }
+
+      const draws = valid.filter((p) => p.homeScore === p.awayScore).length;
+      if (draws > 0 && (!drawSpecialist || draws > drawSpecialist.draws)) {
+        drawSpecialist = {
+          name,
+          draws,
+          pct: Math.round((draws / valid.length) * 100),
+        };
+      }
+    }
+
+    // Average lead time between first submitting a prediction and kickoff,
+    // across group + knockout picks. Only count picks made before kickoff
+    // (backfilled/late rows would otherwise skew it negative).
+    const leads: number[] = [
+      ...u.groupPredictions,
+      ...u.knockoutPredictions,
+    ]
+      .map((p) => p.match.kickoff.getTime() - p.createdAt.getTime())
+      .filter((ms) => ms > 0);
+    if (leads.length >= MIN_PREDICTIONS_TO_QUALIFY) {
+      const avgLeadHours = round1(
+        leads.reduce((a, b) => a + b, 0) / leads.length / (1000 * 60 * 60),
+      );
+      if (!earliestBird || avgLeadHours > earliestBird.avgLeadHours) {
+        earliestBird = { name, avgLeadHours };
+      }
+    }
+  }
+
+  // In Sync — the pair of players whose exact group-scoreline predictions match
+  // on the most matches. Build each person's matchId -> "h-a" map, then compare
+  // every pair (fine at friend-group scale).
+  const predMaps = users.map((u) => {
+    const m = new Map<string, string>();
+    for (const p of u.groupPredictions) {
+      if (p.knownIncorrect || p.homeScore == null || p.awayScore == null)
+        continue;
+      m.set(p.matchId, `${p.homeScore}-${p.awayScore}`);
+    }
+    return { name: displayName(u.name), preds: m };
+  });
+  let inSyncPair: ReportsData["inSyncPair"] = null;
+  for (let i = 0; i < predMaps.length; i++) {
+    for (let j = i + 1; j < predMaps.length; j++) {
+      const a = predMaps[i];
+      const b = predMaps[j];
+      let count = 0;
+      // Iterate the smaller map for efficiency.
+      const [small, large] =
+        a.preds.size <= b.preds.size ? [a.preds, b.preds] : [b.preds, a.preds];
+      for (const [matchId, score] of small) {
+        if (large.get(matchId) === score) count++;
+      }
+      if (count > 0 && (!inSyncPair || count > inSyncPair.count)) {
+        inSyncPair = { nameA: a.name, nameB: b.name, count };
+      }
     }
   }
 
@@ -275,24 +360,6 @@ export async function getReportsData(): Promise<ReportsData> {
         )
       : null;
 
-  // Crowd favorite to win it all — most-picked team in the FINAL bracket slot.
-  let mostPopularChampionPick: ReportsData["mostPopularChampionPick"] = null;
-  if (finalPicks.length > 0) {
-    const counts = new Map<string, number>();
-    for (const p of finalPicks) {
-      counts.set(p.teamId, (counts.get(p.teamId) ?? 0) + 1);
-    }
-    const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
-    const top = sorted[0];
-    if (top) {
-      const [topTeamId, topCount] = top;
-      const team = await prisma.team.findUnique({ where: { id: topTeamId } });
-      if (team) {
-        mostPopularChampionPick = { teamName: team.name, pickCount: topCount };
-      }
-    }
-  }
-
   return {
     leaderboardBars,
     accuracy,
@@ -300,8 +367,11 @@ export async function getReportsData(): Promise<ReportsData> {
     sharpestPredictors,
     popularScorelines,
     awardFavorites,
-    boldestPredictor,
-    mostPopularChampionPick,
+    inSyncPair,
+    drawSpecialist,
+    earliestBird,
+    goalMachine,
+    mostCautious,
     goalsPredictedAvg,
     goalsActualAvg,
     totalFinishedMatches,

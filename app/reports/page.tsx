@@ -132,70 +132,95 @@ export default async function ReportsPage() {
         </h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <FunFactCard
-            icon={<BoltIcon />}
-            label="BOLDEST PREDICTOR"
-            empty="No group predictions yet."
+            icon={<LinkIcon />}
+            label="IN SYNC"
+            empty="Not enough overlapping predictions yet."
             content={
-              data.boldestPredictor && (
+              data.inSyncPair && (
                 <>
                   <div className="font-display font-700 text-lg text-chalk mb-1.5">
-                    {data.boldestPredictor.name}
+                    {data.inSyncPair.nameA} &amp; {data.inSyncPair.nameB}
                   </div>
-                  <div
-                    className="font-display text-[30px] leading-none flex items-baseline gap-2"
-                    style={{
-                      fontFamily:
-                        "'DSEG7 Classic', 'Barlow Condensed', monospace",
-                      color: "#e8a33d",
-                    }}
-                  >
-                    {data.boldestPredictor.totalGoalsPredicted}
-                    <span
-                      className="text-xs font-normal"
-                      style={{
-                        fontFamily: "Inter, sans-serif",
-                        color: "rgba(245,243,236,0.55)",
-                      }}
-                    >
-                      goals predicted
-                    </span>
-                  </div>
+                  <BigStat
+                    value={String(data.inSyncPair.count)}
+                    caption="identical predictions"
+                  />
                 </>
               )
             }
           />
 
           <FunFactCard
-            icon={<TrophyIcon />}
-            label="CROWD FAVORITE TO WIN IT ALL"
-            empty="No bracket final picks yet — this fills in once the bracket predictor is open."
+            icon={<ScaleIcon />}
+            label="DRAW SPECIALIST"
+            empty="No draws predicted yet."
             content={
-              data.mostPopularChampionPick && (
+              data.drawSpecialist && (
                 <>
                   <div className="font-display font-700 text-lg text-chalk mb-1.5">
-                    {data.mostPopularChampionPick.teamName}
+                    {data.drawSpecialist.name}
                   </div>
-                  <div
-                    className="font-display text-[30px] leading-none flex items-baseline gap-2"
-                    style={{
-                      fontFamily:
-                        "'DSEG7 Classic', 'Barlow Condensed', monospace",
-                      color: "#e8a33d",
-                    }}
-                  >
-                    {data.mostPopularChampionPick.pickCount}
-                    <span
-                      className="text-xs font-normal"
-                      style={{
-                        fontFamily: "Inter, sans-serif",
-                        color: "rgba(245,243,236,0.55)",
-                      }}
-                    >
-                      {data.mostPopularChampionPick.pickCount === 1
-                        ? "person picked them"
-                        : "people picked them"}
-                    </span>
+                  <BigStat
+                    value={String(data.drawSpecialist.draws)}
+                    caption={`draws · ${data.drawSpecialist.pct}% of their picks`}
+                  />
+                </>
+              )
+            }
+          />
+
+          <FunFactCard
+            icon={<ClockIcon />}
+            label="EARLY BIRD"
+            empty="Not enough predictions yet."
+            content={
+              data.earliestBird && (
+                <>
+                  <div className="font-display font-700 text-lg text-chalk mb-1.5">
+                    {data.earliestBird.name}
                   </div>
+                  <BigStat
+                    value={formatLead(data.earliestBird.avgLeadHours).value}
+                    caption={formatLead(data.earliestBird.avgLeadHours).caption}
+                  />
+                </>
+              )
+            }
+          />
+
+          <FunFactCard
+            icon={<GoalIcon />}
+            label="GOAL MACHINE"
+            empty="Not enough predictions yet."
+            content={
+              data.goalMachine && (
+                <>
+                  <div className="font-display font-700 text-lg text-chalk mb-1.5">
+                    {data.goalMachine.name}
+                  </div>
+                  <BigStat
+                    value={data.goalMachine.avgGoals.toFixed(1)}
+                    caption="goals / game predicted"
+                  />
+                </>
+              )
+            }
+          />
+
+          <FunFactCard
+            icon={<ShieldIcon />}
+            label="MOST CAUTIOUS"
+            empty="Not enough predictions yet."
+            content={
+              data.mostCautious && (
+                <>
+                  <div className="font-display font-700 text-lg text-chalk mb-1.5">
+                    {data.mostCautious.name}
+                  </div>
+                  <BigStat
+                    value={data.mostCautious.avgGoals.toFixed(1)}
+                    caption="goals / game predicted"
+                  />
                 </>
               )
             }
@@ -254,6 +279,44 @@ function GoalStat({
   );
 }
 
+function BigStat({ value, caption }: { value: string; caption: string }) {
+  return (
+    <div
+      className="font-display text-[30px] leading-none flex items-baseline gap-2"
+      style={{
+        fontFamily: "'DSEG7 Classic', 'Barlow Condensed', monospace",
+        color: "#e8a33d",
+      }}
+    >
+      {value}
+      <span
+        className="text-xs font-normal"
+        style={{
+          fontFamily: "Inter, sans-serif",
+          color: "rgba(245,243,236,0.55)",
+        }}
+      >
+        {caption}
+      </span>
+    </div>
+  );
+}
+
+// Predictions only open 16h before kickoff, so leads are usually hours; show
+// days only if a backfilled/edge value pushes the average past ~1.5 days.
+function formatLead(hours: number): { value: string; caption: string } {
+  if (hours >= 36) {
+    return {
+      value: (hours / 24).toFixed(1),
+      caption: "days before kickoff, avg",
+    };
+  }
+  return {
+    value: String(Math.round(hours)),
+    caption: "hours before kickoff, avg",
+  };
+}
+
 function FunFactCard({
   icon,
   label,
@@ -278,7 +341,7 @@ function FunFactCard({
   );
 }
 
-function BoltIcon() {
+function LinkIcon() {
   return (
     <svg
       width="20"
@@ -290,12 +353,13 @@ function BoltIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </svg>
   );
 }
 
-function TrophyIcon() {
+function ScaleIcon() {
   return (
     <svg
       width="20"
@@ -307,11 +371,45 @@ function TrophyIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M8 21h8" />
-      <path d="M12 17v4" />
-      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
-      <path d="M7 5H5a2 2 0 0 0-2 2v1a4 4 0 0 0 4 4" />
-      <path d="M17 5h2a2 2 0 0 1 2 2v1a4 4 0 0 1-4 4" />
+      <path d="M12 3v18" />
+      <path d="M5 21h14" />
+      <path d="m3 8 4-4 4 4-4 2-4-2z" />
+      <path d="m13 8 4-4 4 4-4 2-4-2z" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 }
