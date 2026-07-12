@@ -52,8 +52,8 @@ export default async function ReportsPage() {
             data={data.participation}
             dataKey="participationPct"
             color="#e8a33d"
-            title="PARTICIPATION"
-            subtitle="SHARE OF MATCHES EACH PERSON ACTUALLY PREDICTED"
+            title="KNOCKOUT PARTICIPATION"
+            subtitle="SHARE OF KNOCKOUT MATCHES EACH PERSON PREDICTED"
           />
         </div>
       </section>

@@ -106,13 +106,11 @@ export async function getReportsData(): Promise<ReportsData> {
   });
 
   const [
-    totalGroupMatches,
     totalKnockoutMatches,
     totalFinishedMatches,
     finishedGroupMatches,
     awardPicks,
   ] = await Promise.all([
-    prisma.match.count({ where: { stage: "GROUP" } }),
     prisma.match.count({ where: { stage: { not: "GROUP" } } }),
     prisma.match.count({ where: { status: "FINISHED" } }),
     prisma.match.findMany({
@@ -165,21 +163,24 @@ export async function getReportsData(): Promise<ReportsData> {
     .filter((a) => a.predicted > 0)
     .sort((a, b) => b.accuracyPct - a.accuracyPct);
 
-  const totalPredictable = totalGroupMatches + totalKnockoutMatches;
+  // Knockout participation only. The group stage was largely played off-app,
+  // so counting all 104 matches would dilute everyone to a meaningless ~40%.
+  // Measuring just the knockout phase (where the pool is actually active)
+  // reflects real engagement.
   const participation: ParticipationDatum[] = users
     .map((u) => {
-      const predicted =
-        u.groupPredictions.length + u.knockoutPredictions.length;
+      const predicted = u.knockoutPredictions.length;
       return {
         name: displayName(u.name),
         predicted,
-        totalPredictable,
+        totalPredictable: totalKnockoutMatches,
         participationPct:
-          totalPredictable > 0
-            ? Math.round((predicted / totalPredictable) * 100)
+          totalKnockoutMatches > 0
+            ? Math.round((predicted / totalKnockoutMatches) * 100)
             : 0,
       };
     })
+    .filter((p) => p.predicted > 0)
     .sort((a, b) => b.participationPct - a.participationPct);
 
   // Sharpest predictors — raw count of predictions that earned points. Unlike
